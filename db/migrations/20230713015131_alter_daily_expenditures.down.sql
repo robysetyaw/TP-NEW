@@ -1,0 +1,1 @@
+ALTER TABLE daily_expenditures DROP COLUMN date;
