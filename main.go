@@ -1,5 +1,7 @@
 package main
 
+import "trackprosto/delivery"
+
 func main() {
-	println("hello world")
+	delivery.NewServer().Run()
 }

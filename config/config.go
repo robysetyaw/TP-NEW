@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"trackprosto/utils/common"
 )
@@ -14,6 +15,14 @@ type DbConfig struct {
 	Password string
 	Driver   string
 }
+
+func (db *DbConfig) ToDSN() string {
+	return fmt.Sprintf(
+		"user=%s password=%s host=%s dbname=%s port=%s sslmode=disable",
+		db.User, db.Password, db.Host, db.Name, db.Port,
+	)
+}
+
 type Config struct {
 	DbConfig
 }
