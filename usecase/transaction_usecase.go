@@ -30,6 +30,8 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	// Generate invoice number
 
 	// TODO countTransaction still return 0
+	tx := uc.transactionRepo.GetDB().Begin()
+	defer tx.Rollback()
 	today := time.Now().Format("20060102")
 	todayDate := time.Now().Format("2006-01-02")
 	number, err := uc.transactionRepo.CountTransactions()
@@ -117,14 +119,18 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	// Create transaction header
 	result, err := uc.transactionRepo.CreateTransactionHeader(transaction)
 	if err != nil {
+		tx.Rollback()
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
 	err = uc.transactionRepo.UpdateCustomerDebt(transaction.CustomerID, transaction.Debt)
 
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
-
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 

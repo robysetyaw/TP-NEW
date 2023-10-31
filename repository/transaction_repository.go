@@ -26,12 +26,16 @@ type TransactionRepository interface {
 	getTransactionDebt(id string) (float64, error)
 	CalculateMeatStockByDate(meatID string, startDate string) (stockIn float64, stockOut float64, err error)
 	UpdateCustomerDebt(id string, additionalDebt float64) error
+	GetDB() *gorm.DB
 }
 
 type transactionRepository struct {
 	db *gorm.DB
 }
 
+func (repo *transactionRepository) GetDB() *gorm.DB {
+	return repo.db
+}
 func (repo *transactionRepository) CalculateMeatStockByDate(meatID string, startDate string) (float64, float64, error) {
 	var stockIn, stockOut float64
 
