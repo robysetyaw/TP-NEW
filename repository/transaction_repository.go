@@ -25,6 +25,7 @@ type TransactionRepository interface {
 	getCustomerDebt(customer_id string) (float64, error)
 	getTransactionDebt(id string) (float64, error)
 	CalculateMeatStockByDate(meatID string, startDate string) (stockIn float64, stockOut float64, err error)
+	UpdateCustomerDebt(id string, additionalDebt float64) error
 }
 
 type transactionRepository struct {
@@ -157,6 +158,23 @@ func (repo *transactionRepository) GetByInvoiceNumber(invoice_number string) (*m
 
 func (repo *transactionRepository) UpdateStatusInvoicePaid(id string) error {
 	return repo.db.Model(&model.TransactionHeader{}).Where("id = ?", id).Update("payment_status", "paid").Error
+}
+
+func (repo *transactionRepository) UpdateCustomerDebt(id string, additionalDebt float64) error {
+	var customer model.CustomerModel
+	// Mengambil data pelanggan berdasarkan ID
+	if err := repo.db.Where("id = ?", id).First(&customer).Error; err != nil {
+		return err
+	}
+	// Mengambil total utang saat ini
+	currentDebt := customer.Debt
+
+	// Menambahkan utang tambahan
+	newDebt := currentDebt + additionalDebt
+	if err := repo.db.Model(&customer).Update("debt", newDebt).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (repo *transactionRepository) UpdateStatusPaymentAmount(id string, total float64) error {

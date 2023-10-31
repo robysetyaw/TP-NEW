@@ -100,6 +100,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 
 	if newTotal > transaction.PaymentAmount {
 		transaction.PaymentStatus = "unpaid"
+		transaction.Debt = newTotal - transaction.PaymentAmount
 	}
 
 	uc.creditPaymentRepo.CreateCreditPayment(&model.CreditPayment{
@@ -118,7 +119,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
-	// err =uc.transactionRepo.UpdateCustomerDebt(transaction.CustomerID)
+	err = uc.transactionRepo.UpdateCustomerDebt(transaction.CustomerID, transaction.Debt)
 
 	if err != nil {
 		return nil, err
