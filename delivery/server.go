@@ -26,6 +26,7 @@ func (s *Server) initController() {
 	controller.NewUserController(s.engine, s.useCaseManager.GetUserUsecase())
 	controller.NewLoginController(s.engine, s.useCaseManager.GetLoginUsecase())
 	controller.NewMeatController(s.engine, s.useCaseManager.GetMeatUsecase())
+	controller.NewTransactionController(s.engine, s.useCaseManager.GetTransactionUseCase())
 }
 
 func NewServer() *Server {

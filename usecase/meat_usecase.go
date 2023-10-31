@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"time"
 	model "trackprosto/models"
 	"trackprosto/repository"
 )
@@ -9,7 +10,7 @@ import (
 type MeatUseCase interface {
 	CreateMeat(meat *model.Meat) error
 	GetMeatById(string) (*model.Meat, error)
-	GetAllMeats() ([]*model.Meat, error)
+	GetAllMeats() ([]*model.MeatWithStock, error)
 	GetMeatByName(string) (*model.Meat, error)
 	UpdateMeat(meat *model.Meat) error
 	DeleteMeat(string) error
@@ -17,10 +18,14 @@ type MeatUseCase interface {
 
 type meatUseCase struct {
 	meatRepository repository.MeatRepository
+	txRepository   repository.TransactionRepository
 }
 
-func NewMeatUseCase(meatRepo repository.MeatRepository) MeatUseCase {
-	return &meatUseCase{meatRepository: meatRepo}
+func NewMeatUseCase(meatRepo repository.MeatRepository, txRepository repository.TransactionRepository) MeatUseCase {
+	return &meatUseCase{
+		meatRepository: meatRepo,
+		txRepository:   txRepository,
+	}
 }
 
 func (ms *meatUseCase) CreateMeat(meat *model.Meat) error {
@@ -38,16 +43,29 @@ func (ms *meatUseCase) CreateMeat(meat *model.Meat) error {
 	return nil
 }
 
-func (mc *meatUseCase) GetAllMeats() ([]*model.Meat, error) {
+func (mc *meatUseCase) GetAllMeats() ([]*model.MeatWithStock, error) {
 	meats, err := mc.meatRepository.GetAllMeats()
 	if err != nil {
 		// Handle any repository errors or perform error logging
 		return nil, err
 	}
+	todayDate := time.Now().Format("2006-01-02")
+	var meatsWithStocks []*model.MeatWithStock
+	for _, meat := range meats {
+		stockIn, stockOut, err := mc.txRepository.CalculateMeatStockByDate(meat.ID, todayDate)
+		if err != nil {
+			// Handle error, you can decide whether to continue or stop the loop
+			return nil, err
+		}
+		meatWithStock := &model.MeatWithStock{
+			Meat:     meat,
+			StockIn:  stockIn,
+			StockOut: stockOut,
+		}
+		meatsWithStocks = append(meatsWithStocks, meatWithStock)
+	}
 
-	// Perform any additional data processing or transformation if needed
-
-	return meats, nil
+	return meatsWithStocks, nil
 }
 
 func (mc *meatUseCase) GetMeatByName(name string) (*model.Meat, error) {
