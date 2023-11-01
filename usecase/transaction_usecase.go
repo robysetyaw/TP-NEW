@@ -47,7 +47,13 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	if err != nil {
 		return nil, fmt.Errorf("failed to get customer by name: %w", err)
 	}
-	invoiceNumber := fmt.Sprintf("INV-%s-%04d", today, number)
+	invoiceNumberFormat := "MJP-%s-%04d"
+
+	if transaction.TxType == "out" {
+		invoiceNumberFormat = "INV-%s-%04d"
+	}
+
+	invoiceNumber := fmt.Sprintf(invoiceNumberFormat, today, number)
 	transaction.ID = uuid.NewString()
 	transaction.Date = todayDate
 	transaction.InvoiceNumber = invoiceNumber
