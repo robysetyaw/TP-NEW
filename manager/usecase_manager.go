@@ -10,6 +10,7 @@ type UsecaseManager interface {
 	GetLoginUsecase() usecase.LoginUseCase
 	GetMeatUsecase() usecase.MeatUseCase
 	GetTransactionUseCase() usecase.TransactionUseCase
+	GetCreditPaymentUseCase() usecase.CreditPaymentUseCase
 }
 
 type usecaseManager struct {
@@ -17,6 +18,7 @@ type usecaseManager struct {
 	userUsecase        usecase.UserUseCase
 	loginUsecase       usecase.LoginUseCase
 	meatUsecase        usecase.MeatUseCase
+	creditPaymentUseCase    usecase.CreditPaymentUseCase
 	transactionUseCase usecase.TransactionUseCase
 }
 
@@ -24,12 +26,20 @@ var onceLoadUserUsecase sync.Once
 var onceLoadLoginUsecase sync.Once
 var onceLoadMeatUsecase sync.Once
 var onceLoadTxUsecase sync.Once
+var onceLoadCreditPaymentUseCase sync.Once
 
 func (um *usecaseManager) GetUserUsecase() usecase.UserUseCase {
 	onceLoadUserUsecase.Do(func() {
 		um.userUsecase = usecase.NewUserUseCase(um.repoManager.GetUserRepo())
 	})
 	return um.userUsecase
+}
+
+func (um *usecaseManager) GetCreditPaymentUseCase() usecase.CreditPaymentUseCase {
+	onceLoadCreditPaymentUseCase.Do(func() {
+		um.creditPaymentUseCase = usecase.NewCreditPaymentUseCase(um.repoManager.GetCreditPaymentRepo(), um.repoManager.GetTransactionRepo())
+	})
+	return um.creditPaymentUseCase
 }
 
 func (um *usecaseManager) GetLoginUsecase() usecase.LoginUseCase {

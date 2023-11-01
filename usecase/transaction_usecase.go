@@ -28,8 +28,6 @@ type transactionUseCase struct {
 // CreateTransaction implements TransactionUseCase.
 func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHeader) (*model.TransactionHeader, error) {
 	// Generate invoice number
-
-	// TODO countTransaction still return 0
 	tx := uc.transactionRepo.GetDB().Begin()
 	defer tx.Rollback()
 	today := time.Now().Format("20060102")
@@ -48,14 +46,11 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	if err != nil {
 		return nil, fmt.Errorf("failed to get customer by name: %w", err)
 	}
-
-	// TODO cek invoicenumebr
 	invoiceNumber := fmt.Sprintf("INV-%s-%04d", today, number)
 	transaction.ID = uuid.NewString()
 	transaction.Date = todayDate
 	transaction.InvoiceNumber = invoiceNumber
 	transaction.CustomerID = customer.Id
-	// transaction.Name = transaction.Name
 	transaction.Address = customer.Address
 	transaction.PhoneNumber = customer.PhoneNumber
 	transaction.Company = company.CompanyName

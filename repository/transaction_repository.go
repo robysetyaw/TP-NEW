@@ -138,7 +138,7 @@ func (repo *transactionRepository) DeleteTransaction(id string) error {
 func (repo *transactionRepository) GetTransactionByRangeDate(startDate time.Time, endDate time.Time) ([]*model.TransactionHeader, error) {
 	var transactions []*model.TransactionHeader
 
-	err := repo.db.Preload("TransactionDetails").Where("created_at BETWEEN ? AND ? AND is_active = true", startDate, endDate).Find(&transactions).Error
+	err := repo.db.Preload("TransactionDetails").Where("created_at BETWEEN ? AND ? AND is_active = true", startDate, endDate).Order("created_at desc").Find(&transactions).Error
 	if err != nil {
 		return nil, err
 	}
