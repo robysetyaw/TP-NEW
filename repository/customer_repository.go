@@ -7,7 +7,7 @@ import (
 )
 
 type CustomerRepository interface {
-	CreateCustomer(*model.CustomerModel) error
+	CreateCustomer(*model.CustomerModel) (*model.CustomerModel, error)
 	UpdateCustomer(*model.CustomerModel) error
 	GetCustomerById(string) (*model.CustomerModel, error)
 	GetCustomerByName(string) (*model.CustomerModel, error)
@@ -25,8 +25,12 @@ func NewCustomerRepository(db *gorm.DB) CustomerRepository {
 	}
 }
 
-func (repo *customerRepository) CreateCustomer(customer *model.CustomerModel) error {
-	return repo.db.Create(customer).Error
+func (repo *customerRepository) CreateCustomer(customer *model.CustomerModel) (*model.CustomerModel, error) {
+	err := repo.db.Create(customer).Error
+	if err != nil {
+		return nil, err
+	}
+	return customer, nil
 }
 
 func (repo *customerRepository) UpdateCustomer(customer *model.CustomerModel) error {

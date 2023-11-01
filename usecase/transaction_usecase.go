@@ -37,6 +37,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		return nil, err
 	}
 
+	// TODO change getcustomerbyname to getcustomerbyid
 	customer, err := uc.customerRepo.GetCustomerByName(transaction.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get customer by name: %w", err)

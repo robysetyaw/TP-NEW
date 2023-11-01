@@ -4,9 +4,9 @@ import "time"
 
 type CustomerModel struct {
 	Id          string    `json:"-" gorm:"primaryKey"`
-	FullName    string    `json:"fullname" binding:"required"`
+	FullName    string    `json:"fullname" binding:"required" gorm:"column:fullname"`
 	Address     string    `json:"address"`
-	CompanyId   string    `json:"company_id"`
+	CompanyId   string    `json:"company_id" binding:"required"`
 	PhoneNumber string    `json:"phone_number" binding:"required"`
 	CreatedAt   time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt   time.Time `json:"updated_at" gorm:"autoUpdateTime"`

@@ -6,7 +6,7 @@ import (
 )
 
 type CustomerUsecase interface {
-	CreateCustomer(customer *model.CustomerModel) error
+	CreateCustomer(customer *model.CustomerModel) (*model.CustomerModel, error)
 	UpdateCustomer(customer *model.CustomerModel) error
 	GetCustomerById(id string) (*model.CustomerModel, error)
 	GetCustomerByName(name string) (*model.CustomerModel, error)
@@ -24,8 +24,12 @@ func NewCustomerUsecase(cr repository.CustomerRepository) CustomerUsecase {
 	}
 }
 
-func (uc *customerUsecase) CreateCustomer(customer *model.CustomerModel) error {
-	return uc.customerRepo.CreateCustomer(customer)
+func (uc *customerUsecase) CreateCustomer(customer *model.CustomerModel) (*model.CustomerModel, error) {
+	customer, err := uc.customerRepo.CreateCustomer(customer)
+	if err != nil {
+		return nil, err
+	}
+	return customer, nil
 }
 
 func (uc *customerUsecase) UpdateCustomer(customer *model.CustomerModel) error {

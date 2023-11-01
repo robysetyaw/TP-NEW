@@ -11,15 +11,17 @@ type UsecaseManager interface {
 	GetMeatUsecase() usecase.MeatUseCase
 	GetTransactionUseCase() usecase.TransactionUseCase
 	GetCreditPaymentUseCase() usecase.CreditPaymentUseCase
+	GetCustomerUsecase() usecase.CustomerUsecase
 }
 
 type usecaseManager struct {
-	repoManager        RepoManager
-	userUsecase        usecase.UserUseCase
-	loginUsecase       usecase.LoginUseCase
-	meatUsecase        usecase.MeatUseCase
-	creditPaymentUseCase    usecase.CreditPaymentUseCase
-	transactionUseCase usecase.TransactionUseCase
+	repoManager          RepoManager
+	userUsecase          usecase.UserUseCase
+	loginUsecase         usecase.LoginUseCase
+	meatUsecase          usecase.MeatUseCase
+	creditPaymentUseCase usecase.CreditPaymentUseCase
+	transactionUseCase   usecase.TransactionUseCase
+	customerUsecase      usecase.CustomerUsecase
 }
 
 var onceLoadUserUsecase sync.Once
@@ -27,6 +29,14 @@ var onceLoadLoginUsecase sync.Once
 var onceLoadMeatUsecase sync.Once
 var onceLoadTxUsecase sync.Once
 var onceLoadCreditPaymentUseCase sync.Once
+var onceLoadCustomerUseCase sync.Once
+
+func (um *usecaseManager) GetCustomerUsecase() usecase.CustomerUsecase {
+	onceLoadCustomerUseCase.Do(func() {
+		um.customerUsecase = usecase.NewCustomerUsecase(um.repoManager.GetCustomerRepo())
+	})
+	return um.customerUsecase
+}
 
 func (um *usecaseManager) GetUserUsecase() usecase.UserUseCase {
 	onceLoadUserUsecase.Do(func() {
