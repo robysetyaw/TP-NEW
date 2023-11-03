@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 	"trackprosto/delivery/middleware"
+	"trackprosto/delivery/utils"
 	model "trackprosto/models"
 	"trackprosto/usecase"
 
@@ -28,13 +29,14 @@ func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 		return
 	}
 
-	err := cc.creditPaymentUseCase.CreateCreditPayment(&payment)
+	transaction, err := cc.creditPaymentUseCase.CreateCreditPayment(&payment)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Credit payment created successfully"})
+	// c.JSON(http.StatusOK, gin.H{"message": "Credit payment created successfully"})
+	utils.SendResponse(c,http.StatusOK,"Credit Payment succesfully add",transaction)	
 }
 
 func (cc *CreditPaymentController) GetCreditPayments(c *gin.Context) {
