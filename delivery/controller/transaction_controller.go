@@ -82,14 +82,13 @@ func (tc *TransactionController) GetAllTransactions(c *gin.Context) {
 	}
 
 	paginationData := map[string]interface{}{
-		"page":        page,
+		"page":         page,
 		"itemsPerPage": itemsPerPage,
-		"totalPages":  totalPages,
+		"totalPages":   totalPages,
 	}
 
 	utils.SendResponse(c, http.StatusOK, "Transactions found", map[string]interface{}{"transactions": transactions, "pagination": paginationData})
 }
-
 
 func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 	id := c.Param("id")
