@@ -8,6 +8,7 @@ import (
 	"trackprosto/repository"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type TransactionUseCase interface {
@@ -35,15 +36,24 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	todayDate := time.Now().Format("2006-01-02")
 	number, err := uc.transactionRepo.CountTransactions()
 	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+		}).Error("Failed to count transactions")
 		return nil, err
 	}
 
 	customer, err := uc.customerRepo.GetCustomerById(transaction.CustomerID)
 	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+		}).Error("Failed to get customer by ID")
 		return nil, fmt.Errorf("failed to get customer by id: %w", err)
 	}
 	company, err := uc.companyRepo.GetCompanyById(customer.CompanyId)
 	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+		}).Error("Failed to get company by ID")
 		return nil, fmt.Errorf("failed to get company by id: %w", err)
 	}
 	invoiceNumberFormat := "MJP-%s-%04d"
@@ -57,7 +67,6 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	transaction.Date = todayDate
 	transaction.Name = customer.FullName
 	transaction.InvoiceNumber = invoiceNumber
-	// transaction.CustomerID = customer.Id
 	transaction.Address = customer.Address
 	transaction.PhoneNumber = customer.PhoneNumber
 	transaction.Company = company.CompanyName
@@ -68,10 +77,17 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	for _, detail := range transaction.TransactionDetails {
 		meat, err := uc.meatRepo.GetMeatByName(detail.MeatName)
 		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"error":     err,
+				"meat_name": detail.MeatName,
+			}).Error("Failed to get meat by name")
 			return nil, err
 		}
 		if meat == nil {
-			return nil, fmt.Errorf("meat name %s not found", meat.Name)
+			logrus.WithFields(logrus.Fields{
+				"meat_name": detail.MeatName,
+			}).Error("Meat not found by name")
+			return nil, fmt.Errorf("meat name %s not found", detail.MeatName)
 		}
 		detail.ID = uuid.NewString()
 		detail.MeatID = meat.ID
@@ -79,27 +95,43 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		detail.IsActive = true
 
 		if detail.Qty >= meat.Stock {
+			logrus.WithFields(logrus.Fields{
+				"meat_name": detail.MeatName,
+			}).Error("Insufficient stock for meat")
 			return nil, fmt.Errorf("insufficient stock for %s", detail.MeatName)
 		}
 
 		if transaction.TxType == "in" {
 			err := uc.meatRepo.IncreaseStock(meat.ID, detail.Qty)
 			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"error":     err,
+					"meat_id":   meat.ID,
+					"meat_name": detail.MeatName,
+				}).Error("Failed to increase meat stock")
 				return nil, err
 			}
 		}
 		if transaction.TxType == "out" {
 			err = uc.meatRepo.ReduceStock(meat.ID, detail.Qty)
 			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"error":     err,
+					"meat_id":   meat.ID,
+					"meat_name": detail.MeatName,
+				}).Error("Failed to reduce meat stock")
 				return nil, err
 			}
 		}
-
 	}
 	transaction.CalulatedTotal()
 	newTotal := uc.UpdateTotalTransaction(transaction)
 
 	if transaction.PaymentAmount > newTotal {
+		logrus.WithFields(logrus.Fields{
+			"payment_amount": transaction.PaymentAmount,
+			"new_total":      newTotal,
+		}).Error("Amount greater than total")
 		return nil, utils.ErrAmountGreaterThanTotal
 	}
 
@@ -123,25 +155,44 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	result, err := uc.transactionRepo.CreateTransactionHeader(transaction)
 	if err != nil {
 		tx.Rollback()
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+		}).Error("Failed to create transaction header")
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
 	err = uc.transactionRepo.UpdateCustomerDebt(transaction.CustomerID, transaction.Debt)
 
 	if err != nil {
 		tx.Rollback()
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+		}).Error("Failed to update customer debt")
 		return nil, err
 	}
 	if err := tx.Commit().Error; err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+		}).Error("Failed to commit transaction")
 		return nil, err
 	}
+	logrus.WithFields(logrus.Fields{
+		"invoice_number": transaction.InvoiceNumber,
+	}).Info("Transaction created successfully")
 	return result, nil
 }
 
 func (uc *transactionUseCase) GetAllTransactions(page int, itemsPerPage int) ([]*model.TransactionHeader, int, error) {
 	transactions, totalPages, err := uc.transactionRepo.GetAllTransactions(page, itemsPerPage)
 	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err,
+		}).Error("Failed to get all transactions")
 		return nil, 0, err
 	}
+	logrus.WithFields(logrus.Fields{
+		"page":           page,
+		"items_per_page": itemsPerPage,
+	}).Info("Retrieved all transactions successfully")
 	return transactions, totalPages, nil
 }
 

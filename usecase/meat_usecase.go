@@ -6,6 +6,8 @@ import (
 	"trackprosto/delivery/utils"
 	model "trackprosto/models"
 	"trackprosto/repository"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type MeatUseCase interface {
@@ -30,14 +32,15 @@ func NewMeatUseCase(meatRepo repository.MeatRepository, txRepository repository.
 }
 
 func (ms *meatUseCase) CreateMeat(meat *model.Meat) error {
-
 	isExist, _ := ms.meatRepository.GetMeatByName(meat.Name)
 	if isExist != nil {
+		log.WithField("meatName", meat.Name).Error("Meat name already exists")
 		return utils.ErrMeatNameAlreadyExist
 	}
 	meat.IsActive = true
 	err := ms.meatRepository.CreateMeat(meat)
 	if err != nil {
+		log.WithField("error", err).Error("Failed to create meat")
 		return err
 	}
 
@@ -47,7 +50,7 @@ func (ms *meatUseCase) CreateMeat(meat *model.Meat) error {
 func (mc *meatUseCase) GetAllMeats() ([]*model.MeatWithStock, error) {
 	meats, err := mc.meatRepository.GetAllMeats()
 	if err != nil {
-		// Handle any repository errors or perform error logging
+		log.WithField("error", err).Error("Failed to get all meats")
 		return nil, err
 	}
 	todayDate := time.Now().Format("2006-01-02")
@@ -55,7 +58,7 @@ func (mc *meatUseCase) GetAllMeats() ([]*model.MeatWithStock, error) {
 	for _, meat := range meats {
 		stockIn, stockOut, err := mc.txRepository.CalculateMeatStockByDate(meat.ID, todayDate)
 		if err != nil {
-			// Handle error, you can decide whether to continue or stop the loop
+			log.WithField("error", err).Error("Failed to calculate meat stock")
 			return nil, err
 		}
 		meatWithStock := &model.MeatWithStock{
@@ -72,11 +75,9 @@ func (mc *meatUseCase) GetAllMeats() ([]*model.MeatWithStock, error) {
 func (mc *meatUseCase) GetMeatByName(name string) (*model.Meat, error) {
 	meat, err := mc.meatRepository.GetMeatByName(name)
 	if err != nil {
-		// Handle any repository errors or perform error logging
+		log.WithField("error", err).Error("Failed to get meat by name")
 		return nil, err
 	}
-
-	// Perform any additional data processing or transformation if needed
 
 	return meat, nil
 }
@@ -84,11 +85,9 @@ func (mc *meatUseCase) GetMeatByName(name string) (*model.Meat, error) {
 func (mc *meatUseCase) GetMeatById(id string) (*model.Meat, error) {
 	meat, err := mc.meatRepository.GetMeatByName(id)
 	if err != nil {
-		// Handle any repository errors or perform error logging
+		log.WithField("error", err).Error("Failed to get meat by ID")
 		return nil, err
 	}
-
-	// Perform any additional data processing or transformation if needed
 
 	return meat, nil
 }
@@ -97,18 +96,18 @@ func (mc *meatUseCase) DeleteMeat(id string) error {
 	// Implement any business logic or validation before deleting the meat
 	existingMeat, err := mc.meatRepository.GetMeatByName(id)
 	if err != nil {
-		return fmt.Errorf("failed to check meatname existence: %v", err)
+		log.WithField("error", err).Error("Failed to check meat name existence")
+		return fmt.Errorf("failed to check meat name existence: %v", err)
 	}
 	if existingMeat != nil {
-		return fmt.Errorf("meatname already exists")
+		log.WithField("meatName", id).Error("Meat name already exists")
+		return fmt.Errorf("meat name already exists")
 	}
 	err = mc.meatRepository.DeleteMeat(id)
 	if err != nil {
-		// Handle any repository errors or perform error logging
-		return nil
+		log.WithField("error", err).Error("Failed to delete meat")
+		return err
 	}
-
-	// Perform any additional data processing or transformation if needed
 
 	return nil
 }
@@ -118,14 +117,16 @@ func (uc *meatUseCase) UpdateMeat(meat *model.Meat) error {
 	// You can also perform data manipulation or enrichment if needed
 	existingMeat, err := uc.meatRepository.GetMeatByName(meat.Name)
 	if err != nil {
-		return fmt.Errorf("failed to check meatname existence: %v", err)
+		log.WithField("error", err).Error("Failed to check meat name existence")
+		return fmt.Errorf("failed to check meat name existence: %v", err)
 	}
 	if existingMeat != nil {
-		return fmt.Errorf("meatname already exists")
+		log.WithField("meatName", meat.Name).Error("Meat name already exists")
+		return fmt.Errorf("meat name already exists")
 	}
 	err = uc.meatRepository.UpdateMeat(meat)
 	if err != nil {
-		// Handle any repository errors or perform error logging
+		log.WithField("error", err).Error("Failed to update meat")
 		return err
 	}
 

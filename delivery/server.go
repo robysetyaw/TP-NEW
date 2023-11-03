@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"io/ioutil"
 	"os"
 	"trackprosto/config"
 	"trackprosto/delivery/controller"
@@ -55,6 +56,9 @@ func NewServer() *Server {
 	logger := log.New()
 	logger.SetFormatter(&log.JSONFormatter{})
 	logger.SetOutput(os.Stdout) // Atur output ke stdout atau file log
+	gin.SetMode(gin.ReleaseMode)  // Mengubah mode Gin menjadi "release" di lingkungan produksi
+	gin.DefaultWriter = ioutil.Discard // Menyembunyikan log bawaan Gin
+
 
 	// Contoh pengaturan level logging
 	logger.SetLevel(log.DebugLevel)
