@@ -1,8 +1,8 @@
 package usecase
 
 import (
-	"fmt"
 	"time"
+	"trackprosto/delivery/utils"
 	model "trackprosto/models"
 	"trackprosto/repository"
 
@@ -36,10 +36,10 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 		return nil, err
 	}
 	if transaction == nil {
-		return nil, fmt.Errorf("invoiceNumber Not Exist")
+		return nil, utils.ErrInvoiceNumberNotExist
 	}
 	if transaction.PaymentStatus == "paid" {
-		return nil, fmt.Errorf("invoice Already Paid")
+		return nil, utils.ErrInvoiceAlreadyPaid
 	}
 	createdat := time.Now()
 	todayDate := time.Now().Format("2006-01-02")
