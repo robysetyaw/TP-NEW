@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
 	"trackprosto/delivery/middleware"
 	"trackprosto/delivery/utils"
 	model "trackprosto/models"
@@ -62,16 +63,33 @@ func (tc *TransactionController) GetTransactionByID(c *gin.Context) {
 }
 
 func (tc *TransactionController) GetAllTransactions(c *gin.Context) {
-	transactions, err := tc.transactionUseCase.GetAllTransactions()
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page <= 0 {
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid page number", nil)
+		return
+	}
+
+	itemsPerPage, err := strconv.Atoi(c.DefaultQuery("itemsPerPage", "10"))
+	if err != nil || itemsPerPage <= 0 {
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid itemsPerPage", nil)
+		return
+	}
+
+	transactions, totalPages, err := tc.transactionUseCase.GetAllTransactions(page, itemsPerPage)
 	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get transactions"})
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
-	// c.JSON(http.StatusOK, transactions)
-	utils.SendResponse(c, http.StatusOK, "Transactions found", transactions)
+	paginationData := map[string]interface{}{
+		"page":        page,
+		"itemsPerPage": itemsPerPage,
+		"totalPages":  totalPages,
+	}
+
+	utils.SendResponse(c, http.StatusOK, "Transactions found", map[string]interface{}{"transactions": transactions, "pagination": paginationData})
 }
+
 
 func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 	id := c.Param("id")

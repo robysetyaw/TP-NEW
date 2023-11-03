@@ -12,7 +12,7 @@ type TransactionRepository interface {
 	CreateTransactionHeader(header *model.TransactionHeader) (*model.TransactionHeader, error)
 	GetTransactionByID(id string) (*model.TransactionHeader, error)
 	GetTransactionByRangeDate(startDate time.Time, endDate time.Time) ([]*model.TransactionHeader, error)
-	GetAllTransactions() ([]*model.TransactionHeader, error)
+	GetAllTransactions(page int, itemsPerPage int) ([]*model.TransactionHeader, int, error)
 	DeleteTransaction(id string) error
 	CountTransactions() (int, error)
 	GetByInvoiceNumber(invoice_number string) (*model.TransactionHeader, error)
@@ -115,15 +115,36 @@ func (repo *transactionRepository) GetTransactionByID(id string) (*model.Transac
 	return &transaction, nil
 }
 
-func (repo *transactionRepository) GetAllTransactions() ([]*model.TransactionHeader, error) {
+func (repo *transactionRepository) GetAllTransactions(page int, itemsPerPage int) ([]*model.TransactionHeader, int, error) {
 	var transactions []*model.TransactionHeader
 
-	if err := repo.db.Preload("TransactionDetails").Where("is_active = true").Order("created_at desc").Find(&transactions).Error; err != nil {
-		return nil, err
+	if page < 1 {
+		page = 1
 	}
 
-	return transactions, nil
+	var totalCount int64
+	if err := repo.db.Model(&model.TransactionHeader{}).Where("is_active = true").Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	totalPages := int((totalCount + int64(itemsPerPage) - 1) / int64(itemsPerPage))
+
+	if page > totalPages {
+		page = totalPages
+	}
+
+	offset := (page - 1) * itemsPerPage
+
+	err := repo.db.Preload("TransactionDetails").Where("is_active = true").
+		Offset(offset).Limit(itemsPerPage).
+		Order("created_at desc").Find(&transactions).Error
+	if err != nil {
+		return nil, totalPages, err
+	}
+
+	return transactions, totalPages, nil
 }
+
 
 func (repo *transactionRepository) DeleteTransaction(id string) error {
 	transaction := model.TransactionHeader{ID: id}

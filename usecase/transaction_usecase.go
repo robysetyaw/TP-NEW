@@ -11,7 +11,7 @@ import (
 
 type TransactionUseCase interface {
 	CreateTransaction(transaction *model.TransactionHeader) (*model.TransactionHeader, error)
-	GetAllTransactions() ([]*model.TransactionHeader, error)
+	GetAllTransactions(page int, itemsPerPage int) ([]*model.TransactionHeader, int, error)
 	GetTransactionByID(id string) (*model.TransactionHeader, error)
 	DeleteTransaction(id string) error
 	GetTransactionByInvoiceNumber(inv_number string) (*model.TransactionHeader, error)
@@ -37,15 +37,13 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		return nil, err
 	}
 
-	// TODO change getcustomerbyname to getcustomerbyid
-	customer, err := uc.customerRepo.GetCustomerByName(transaction.Name)
+	customer, err := uc.customerRepo.GetCustomerById(transaction.CustomerID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get customer by name: %w", err)
+		return nil, fmt.Errorf("failed to get customer by id: %w", err)
 	}
-
 	company, err := uc.companyRepo.GetCompanyById(customer.CompanyId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get customer by name: %w", err)
+		return nil, fmt.Errorf("failed to get company by id: %w", err)
 	}
 	invoiceNumberFormat := "MJP-%s-%04d"
 
@@ -56,8 +54,9 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	invoiceNumber := fmt.Sprintf(invoiceNumberFormat, today, number)
 	transaction.ID = uuid.NewString()
 	transaction.Date = todayDate
+	transaction.Name = customer.FullName
 	transaction.InvoiceNumber = invoiceNumber
-	transaction.CustomerID = customer.Id
+	// transaction.CustomerID = customer.Id
 	transaction.Address = customer.Address
 	transaction.PhoneNumber = customer.PhoneNumber
 	transaction.Company = company.CompanyName
@@ -76,6 +75,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		detail.ID = uuid.NewString()
 		detail.MeatID = meat.ID
 		detail.TransactionID = transaction.ID
+		detail.IsActive = true
 
 		if detail.Qty >= meat.Stock {
 			return nil, fmt.Errorf("insufficient stock for %s", detail.MeatName)
@@ -136,8 +136,12 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	return result, nil
 }
 
-func (uc *transactionUseCase) GetAllTransactions() ([]*model.TransactionHeader, error) {
-	return uc.transactionRepo.GetAllTransactions()
+func (uc *transactionUseCase) GetAllTransactions(page int, itemsPerPage int) ([]*model.TransactionHeader, int, error) {
+	transactions, totalPages, err := uc.transactionRepo.GetAllTransactions(page, itemsPerPage)
+	if err != nil {
+		return nil, 0, err
+	}
+	return transactions, totalPages, nil
 }
 
 // notUse
