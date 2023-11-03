@@ -8,6 +8,8 @@ import (
 	model "trackprosto/models"
 	"trackprosto/usecase"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,28 +30,44 @@ func NewTransactionController(r *gin.Engine, transactionUseCase usecase.Transact
 	return controller
 }
 
-func (tc *TransactionController) CreateTransaction(c *gin.Context) {
-	var request model.TransactionHeader
-	if err := c.ShouldBindJSON(&request); err != nil {
-		// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
-		return
-	}
+	func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 
-	transaction, err := tc.transactionUseCase.CreateTransaction(&request)
-	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		if err == utils.ErrAmountGreaterThanTotal {
-			utils.SendResponse(c, http.StatusBadRequest, utils.ErrAmountGreaterThanTotal.Error() , nil)
-		}else{
-			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+		if err != nil {
+			// c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
+			utils.SendResponse(c, http.StatusUnauthorized, "Invalid authorization header", nil)
+			return
 		}
-		return
-	}
 
-	// c.JSON(http.StatusOK, gin.H{"message": "Transaction created successfully"})
-	utils.SendResponse(c, http.StatusOK, "Transaction created successfully", transaction)
-}
+		claims, err := utils.VerifyJWTToken(token)
+		if err != nil {
+			// c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+			return
+		}
+
+		userName := claims["username"].(string)
+		var request model.TransactionHeader
+		if err := c.ShouldBindJSON(&request); err != nil {
+			// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+			return
+		}
+		logrus.Infof("User %s is creating a transaction", userName)
+		transaction, err := tc.transactionUseCase.CreateTransaction(&request)
+		if err != nil {
+			// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			if err == utils.ErrAmountGreaterThanTotal {
+				utils.SendResponse(c, http.StatusBadRequest, utils.ErrAmountGreaterThanTotal.Error(), nil)
+			} else {
+				utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+			}
+			return
+		}
+
+		// c.JSON(http.StatusOK, gin.H{"message": "Transaction created successfully"})
+		utils.SendResponse(c, http.StatusOK, "Transaction created successfully", transaction)
+	}
 
 func (tc *TransactionController) GetTransactionByID(c *gin.Context) {
 	id := c.Param("id")
