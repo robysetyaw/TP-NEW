@@ -5,4 +5,5 @@ import "errors"
 var (
     ErrInvoiceNumberNotExist = errors.New("Invoice number does not exist")
     ErrInvoiceAlreadyPaid    = errors.New("Invoice is already paid")
+	ErrAmountGreaterThanTotal = errors.New("Amount is greater than total transaction")
 )

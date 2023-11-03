@@ -3,6 +3,7 @@ package usecase
 import (
 	"fmt"
 	"time"
+	"trackprosto/delivery/utils"
 	model "trackprosto/models"
 	"trackprosto/repository"
 
@@ -99,7 +100,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	newTotal := uc.UpdateTotalTransaction(transaction)
 
 	if transaction.PaymentAmount > newTotal {
-		return nil, fmt.Errorf("amount is large than total transaction")
+		return nil, utils.ErrAmountGreaterThanTotal
 	}
 
 	if newTotal > transaction.PaymentAmount {

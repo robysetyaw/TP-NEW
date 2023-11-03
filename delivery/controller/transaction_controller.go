@@ -21,7 +21,6 @@ func NewTransactionController(r *gin.Engine, transactionUseCase usecase.Transact
 	}
 
 	r.POST("/transactions", middleware.JWTAuthMiddleware(), middleware.JSONMiddleware(), controller.CreateTransaction)
-	// r.GET("/transactions/:id", middleware.JWTAuthMiddleware(), controller.GetTransactionByID)
 	r.GET("/transactions/:invoice_number", middleware.JWTAuthMiddleware(), controller.GetTransactionByInvoiceNumber)
 	r.GET("/transactions", middleware.JWTAuthMiddleware(), controller.GetAllTransactions)
 	r.DELETE("/transactions/:id", middleware.JWTAuthMiddleware(), controller.DeleteTransaction)
@@ -40,7 +39,11 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 	transaction, err := tc.transactionUseCase.CreateTransaction(&request)
 	if err != nil {
 		// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		if err == utils.ErrAmountGreaterThanTotal {
+			utils.SendResponse(c, http.StatusBadRequest, utils.ErrAmountGreaterThanTotal.Error() , nil)
+		}else{
+			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		}
 		return
 	}
 
