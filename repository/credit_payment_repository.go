@@ -14,6 +14,7 @@ type CreditPaymentRepository interface {
 	GetCreditPaymentByID(id string) (*model.CreditPayment, error)
 	UpdateCreditPayment(payment *model.CreditPayment) error
 	GetTotalCredit(inv_number string) (float64, error)
+	GetCreditPaymentsByInvoiceNumber(inv_number string) ([]*model.CreditPayment, error)
 }
 
 type creditPaymentRepository struct {
@@ -56,4 +57,12 @@ func (repo *creditPaymentRepository) GetTotalCredit(inv_number string) (float64,
 		return 0, fmt.Errorf("failed to get total credit: %w", err)
 	}
 	return total, nil
+}
+
+func (repo *creditPaymentRepository) GetCreditPaymentsByInvoiceNumber(inv_number string) ([]*model.CreditPayment, error) {
+	var payments []*model.CreditPayment
+	if err := repo.db.Where("inv_number = ?", inv_number).Order("created_at desc").Find(&payments).Error; err != nil {
+		return nil, err
+	}
+	return payments, nil
 }

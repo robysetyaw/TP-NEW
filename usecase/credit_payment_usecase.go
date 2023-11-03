@@ -10,10 +10,11 @@ import (
 )
 
 type CreditPaymentUseCase interface {
-	CreateCreditPayment(payment *model.CreditPayment) (*model.TransactionHeader, error)
+	CreateCreditPayment(payment *model.CreditPayment) (*model.CreditPaymentResponse, error)
 	GetCreditPayments() ([]*model.CreditPayment, error)
 	GetCreditPaymentByID(id string) (*model.CreditPayment, error)
 	UpdateCreditPayment(payment *model.CreditPayment) error
+	GetCreditPaymentsByInvoiceNumber(inv_number string) ([]*model.CreditPayment, error)
 }
 type creditPaymentUseCase struct {
 	creditPaymentRepo repository.CreditPaymentRepository
@@ -27,46 +28,56 @@ func NewCreditPaymentUseCase(creditPaymentRepo repository.CreditPaymentRepositor
 	}
 }
 
-func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment) (*model.TransactionHeader, error) {
-    // Validasi atau logika bisnis sebelum membuat pembayaran kredit
-    // ...
-    transaction, err := uc.transactionRepo.GetByInvoiceNumber(payment.InvoiceNumber)
-    if err != nil {
-        return nil, err
-    }
-    if transaction == nil {
-        return nil, fmt.Errorf("invoiceNumber Not Exist")
-    }
-    if transaction.PaymentStatus == "paid" {
-        return nil, fmt.Errorf("invoice Already Paid")
-    }
-    createdat := time.Now()
-    todayDate := time.Now().Format("2006-01-02")
-    payment.ID = uuid.NewString()
-    payment.PaymentDate = todayDate
-    payment.CreatedAt = createdat
-    payment.UpdatedAt = createdat
-    payment.CreatedBy = "admin"
-    payment.UpdatedBy = "admin"
+func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment) (*model.CreditPaymentResponse, error) {
+	// Validasi atau logika bisnis sebelum membuat pembayaran kredit
+	// ...
+	transaction, err := uc.transactionRepo.GetByInvoiceNumber(payment.InvoiceNumber)
+	if err != nil {
+		return nil, err
+	}
+	if transaction == nil {
+		return nil, fmt.Errorf("invoiceNumber Not Exist")
+	}
+	if transaction.PaymentStatus == "paid" {
+		return nil, fmt.Errorf("invoice Already Paid")
+	}
+	createdat := time.Now()
+	todayDate := time.Now().Format("2006-01-02")
+	payment.ID = uuid.NewString()
+	payment.PaymentDate = todayDate
+	payment.CreatedAt = createdat
+	payment.UpdatedAt = createdat
+	payment.CreatedBy = "admin"
+	payment.UpdatedBy = "admin"
 
-    err = uc.creditPaymentRepo.CreateCreditPayment(payment)
-    if err != nil {
-        return nil, err
-    }
-    totalCredit, err := uc.creditPaymentRepo.GetTotalCredit(payment.InvoiceNumber)
-    if err != nil {
-        return nil, err
-    }
-    uc.transactionRepo.UpdateStatusPaymentAmount(transaction.ID, totalCredit)
+	err = uc.creditPaymentRepo.CreateCreditPayment(payment)
+	if err != nil {
+		return nil, err
+	}
+	totalCredit, err := uc.creditPaymentRepo.GetTotalCredit(payment.InvoiceNumber)
+	if err != nil {
+		return nil, err
+	}
+	newDebt := transaction.Total - totalCredit
+	uc.transactionRepo.UpdateStatusPaymentAmount(transaction.ID, totalCredit)
+	uc.transactionRepo.UpdateDebtTransaction(transaction.ID, newDebt)
 
-    if totalCredit >= transaction.Total {
-        err = uc.transactionRepo.UpdateStatusInvoicePaid(transaction.ID)
-        if err != nil {
-            return nil, err
-        }
-    }
+	if totalCredit >= transaction.Total {
+		err = uc.transactionRepo.UpdateStatusInvoicePaid(transaction.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Perbarui transaksi setelah pembaruan payment amount
+	transaction.PaymentAmount = totalCredit
+	transaction.Debt = newDebt
 
-    return transaction, nil
+	creditPaymentResponse := &model.CreditPaymentResponse{
+		Transaction:   transaction,
+		CreditPayment: payment,
+	}
+
+	return creditPaymentResponse, nil
 }
 
 func (uc *creditPaymentUseCase) GetCreditPayments() ([]*model.CreditPayment, error) {
@@ -97,4 +108,13 @@ func (uc *creditPaymentUseCase) UpdateCreditPayment(payment *model.CreditPayment
 	}
 
 	return nil
+}
+
+func (uc *creditPaymentUseCase) GetCreditPaymentsByInvoiceNumber(inv_number string) ([]*model.CreditPayment, error) {
+	payments, err := uc.creditPaymentRepo.GetCreditPaymentsByInvoiceNumber(inv_number)
+	if err != nil {
+		return nil, err
+	}
+
+	return payments, nil
 }

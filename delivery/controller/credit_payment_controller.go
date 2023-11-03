@@ -19,6 +19,7 @@ func NewCreditPaymentController(r *gin.Engine, creditPaymentUseCase usecase.Cred
 		creditPaymentUseCase: creditPaymentUseCase,
 	}
 	r.POST("/credit_payment", middleware.JWTAuthMiddleware(), controller.CreateCreditPayment)
+	r.GET("/credit_payments/:invoice_number", middleware.JWTAuthMiddleware(), controller.GetCreditPaymentsByInvoiceNumber)
 	return controller
 }
 
@@ -36,7 +37,7 @@ func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 	}
 
 	// c.JSON(http.StatusOK, gin.H{"message": "Credit payment created successfully"})
-	utils.SendResponse(c,http.StatusOK,"Credit Payment succesfully add",transaction)	
+	utils.SendResponse(c, http.StatusOK, "Credit Payment succesfully add", transaction)
 }
 
 func (cc *CreditPaymentController) GetCreditPayments(c *gin.Context) {
@@ -79,4 +80,17 @@ func (cc *CreditPaymentController) UpdateCreditPayment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Credit payment updated successfully"})
+}
+
+func (cc *CreditPaymentController) GetCreditPaymentsByInvoiceNumber(c *gin.Context) {
+	invoice_number := c.Param("invoice_number")
+
+	payments, err := cc.creditPaymentUseCase.GetCreditPaymentsByInvoiceNumber(invoice_number)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// c.JSON(http.StatusOK, payments)
+	utils.SendResponse(c, http.StatusOK, "Succes get credit payments", payments)
 }

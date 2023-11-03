@@ -12,3 +12,8 @@ type CreditPayment struct {
 	UpdatedAt     time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 	UpdatedBy     string    `json:"updated_by"`
 }
+
+type CreditPaymentResponse struct {
+	Transaction *TransactionHeader
+	CreditPayment *CreditPayment
+}
