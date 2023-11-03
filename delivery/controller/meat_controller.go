@@ -54,11 +54,13 @@ func (mc *MeatController) CreateMeat(ctx *gin.Context) {
 	meat.ID = uuid.New().String()
 	err = mc.meatUseCase.CreateMeat(&meat)
 	if err != nil {
-		if err.Error() == "username already exists" {
+		if err == utils.ErrMeatNameAlreadyExist {
 			utils.SendResponse(ctx, http.StatusConflict, "meatname already exists", nil)
+		} else {
+			utils.SendResponse(ctx, http.StatusInternalServerError, "Failed to create meat", nil)
 		}
 		// ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create meat"})
-		utils.SendResponse(ctx, http.StatusInternalServerError, "Failed to create meat", nil)
+
 		return
 	}
 	// ctx.JSON(http.StatusCreated, meat)

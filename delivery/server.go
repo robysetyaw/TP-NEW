@@ -1,12 +1,14 @@
 package delivery
 
 import (
+	"os"
 	"trackprosto/config"
 	"trackprosto/delivery/controller"
 	"trackprosto/manager"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 type Server struct {
@@ -48,5 +50,14 @@ func NewServer() *Server {
 	infra := manager.NewInfraManager(c)
 	repo := manager.NewRepoManager(infra)
 	usecase := manager.NewUsecaseManager(repo)
+
+	// Inisialisasi logger
+	logger := log.New()
+	logger.SetFormatter(&log.JSONFormatter{})
+	logger.SetOutput(os.Stdout) // Atur output ke stdout atau file log
+
+	// Contoh pengaturan level logging
+	logger.SetLevel(log.DebugLevel)
+
 	return &Server{useCaseManager: usecase, engine: r}
 }

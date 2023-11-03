@@ -3,6 +3,7 @@ package usecase
 import (
 	"fmt"
 	"time"
+	"trackprosto/delivery/utils"
 	model "trackprosto/models"
 	"trackprosto/repository"
 )
@@ -32,7 +33,7 @@ func (ms *meatUseCase) CreateMeat(meat *model.Meat) error {
 
 	isExist, _ := ms.meatRepository.GetMeatByName(meat.Name)
 	if isExist != nil {
-		return fmt.Errorf("meatname already exists")
+		return utils.ErrMeatNameAlreadyExist
 	}
 	meat.IsActive = true
 	err := ms.meatRepository.CreateMeat(meat)

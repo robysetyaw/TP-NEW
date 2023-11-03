@@ -6,6 +6,8 @@ import (
 	model "trackprosto/models"
 	"trackprosto/repository"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/google/uuid"
 )
 
@@ -31,21 +33,26 @@ func NewCreditPaymentUseCase(creditPaymentRepo repository.CreditPaymentRepositor
 func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment) (*model.CreditPaymentResponse, error) {
 	// Validasi atau logika bisnis sebelum membuat pembayaran kredit
 	// ...
-
+	log.Info("Mengawali pembuatan pembayaran kredit")
 	tx := uc.transactionRepo.GetDB().Begin() // Mulai transaction
 	defer tx.Rollback()
 
 	transaction, err := uc.transactionRepo.GetByInvoiceNumber(payment.InvoiceNumber)
 	if err != nil {
-		// tx.Rollback() // Rollback jika terjadi kesalahan
+		log.Error("Gagal mengambil transaksi berdasarkan nomor faktur:", err)
 		return nil, err
 	}
 	if transaction == nil {
-		// tx.Rollback() // Rollback jika terjadi kesalahan
+		log.Error("Transaksi tidak ditemukan berdasarkan nomor faktur:", payment.InvoiceNumber)
+		// log.WithFields(log.Fields{
+		// 	"transaction": payment.InvoiceNumber,
+		// 	"nom":         payment.Amount,
+		// }).Info("Transaksi tidak ditemukan berdasarkan nomor faktur")
+
 		return nil, utils.ErrInvoiceNumberNotExist
 	}
 	if transaction.PaymentStatus == "paid" {
-		// tx.Rollback() // Rollback jika terjadi kesalahan
+		log.Error("Faktur sudah dibayar sebelumnya.")
 		return nil, utils.ErrInvoiceAlreadyPaid
 	}
 	createdat := time.Now()
@@ -59,11 +66,13 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 
 	err = uc.creditPaymentRepo.CreateCreditPayment(payment)
 	if err != nil {
+		log.Error("Gagal membuat pembayaran kredit:", err)
 		tx.Rollback() // Rollback jika terjadi kesalahan
 		return nil, err
 	}
 	totalCredit, err := uc.creditPaymentRepo.GetTotalCredit(payment.InvoiceNumber)
 	if err != nil {
+		log.Error("Gagal mengambil total kredit:", err)
 		tx.Rollback() // Rollback jika terjadi kesalahan
 		return nil, err
 	}
@@ -74,6 +83,7 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 	if totalCredit >= transaction.Total {
 		err = uc.transactionRepo.UpdateStatusInvoicePaid(transaction.ID)
 		if err != nil {
+			log.Error("Gagal memperbarui status faktur menjadi sudah dibayar:", err)
 			tx.Rollback() // Rollback jika terjadi kesalahan
 			return nil, err
 		}
@@ -88,9 +98,11 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		log.Error("Gagal melakukan commit transaksi:", err)
 		return nil, err
 	}
 
+	log.Info("Pembayaran kredit berhasil dibuat.")
 	return creditPaymentResponse, nil
 }
 
@@ -99,7 +111,7 @@ func (uc *creditPaymentUseCase) GetCreditPayments() ([]*model.CreditPayment, err
 	if err != nil {
 		return nil, err
 	}
-
+	log.Info("Pembayaran kredit selesai")
 	return payments, nil
 }
 
