@@ -27,6 +27,7 @@ type TransactionRepository interface {
 	CalculateMeatStockByDate(meatID string, startDate string) (stockIn float64, stockOut float64, err error)
 	UpdateCustomerDebt(id string, additionalDebt float64) error
 	GetDB() *gorm.DB
+	UpdateDebtTransaction(id string, total float64) error
 }
 
 type transactionRepository struct {
@@ -204,6 +205,10 @@ func (repo *transactionRepository) UpdateCustomerDebt(id string, additionalDebt 
 
 func (repo *transactionRepository) UpdateStatusPaymentAmount(id string, total float64) error {
 	return repo.db.Model(&model.TransactionHeader{}).Where("id = ?", id).Update("payment_amount", total).Error
+}
+
+func (repo *transactionRepository) UpdateDebtTransaction(id string, total float64) error {
+	return repo.db.Model(&model.TransactionHeader{}).Where("id = ?", id).Update("debt", total).Error
 }
 
 func (repo *transactionRepository) GetTransactionByRangeDateWithTxType(startDate time.Time, endDate time.Time, tx_type string) ([]*model.TransactionHeader, error) {
