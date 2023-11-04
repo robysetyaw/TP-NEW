@@ -5,8 +5,9 @@ import (
 	"trackprosto/delivery/utils"
 	model "trackprosto/models"
 	"trackprosto/repository"
-	log "github.com/sirupsen/logrus"
+
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 type CreditPaymentUseCase interface {
@@ -29,16 +30,8 @@ func NewCreditPaymentUseCase(creditPaymentRepo repository.CreditPaymentRepositor
 }
 
 func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment) (*model.CreditPaymentResponse, error) {
-	// Log info: Mengawali pembuatan pembayaran kredit
-	log.WithFields(log.Fields{
-		"invoiceNumber": payment.InvoiceNumber,
-		"amount":        payment.Amount,
-	}).Info("Mengawali pembuatan pembayaran kredit")
 
-	// Validasi atau logika bisnis sebelum membuat pembayaran kredit
-	// ...
-
-	tx := uc.transactionRepo.GetDB().Begin() // Mulai transaction
+	tx := uc.transactionRepo.GetDB().Begin() // Start a transaction
 	defer tx.Rollback()
 
 	transaction, err := uc.transactionRepo.GetByInvoiceNumber(payment.InvoiceNumber)
@@ -46,15 +39,15 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 		log.WithFields(log.Fields{
 			"invoiceNumber": payment.InvoiceNumber,
 			"error":         err,
-		}).Error("Gagal mendapatkan transaksi berdasarkan nomor faktur")
+		}).Error("Failed to get transaction by invoice number")
 		return nil, err
 	}
 	if transaction == nil {
-		log.WithField("invoiceNumber", payment.InvoiceNumber).Error("Faktur tidak ditemukan")
+		log.WithField("invoiceNumber", payment.InvoiceNumber).Error("Invoice not found")
 		return nil, utils.ErrInvoiceNumberNotExist
 	}
 	if transaction.PaymentStatus == "paid" {
-		log.WithField("invoiceNumber", payment.InvoiceNumber).Error("Faktur sudah dibayar sebelumnya.")
+		log.WithField("invoiceNumber", payment.InvoiceNumber).Error("Invoice has already been paid.")
 		return nil, utils.ErrInvoiceAlreadyPaid
 	}
 
@@ -69,20 +62,20 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 
 	err = uc.creditPaymentRepo.CreateCreditPayment(payment)
 	if err != nil {
-		tx.Rollback() // Rollback jika terjadi kesalahan
+		tx.Rollback() // Rollback in case of error
 		log.WithFields(log.Fields{
 			"invoiceNumber": payment.InvoiceNumber,
 			"error":         err,
-		}).Error("Gagal membuat pembayaran kredit")
+		}).Error("Failed to create credit payment")
 		return nil, err
 	}
 	totalCredit, err := uc.creditPaymentRepo.GetTotalCredit(payment.InvoiceNumber)
 	if err != nil {
-		tx.Rollback() // Rollback jika terjadi kesalahan
+		tx.Rollback() // Rollback in case of error
 		log.WithFields(log.Fields{
 			"invoiceNumber": payment.InvoiceNumber,
 			"error":         err,
-		}).Error("Gagal mendapatkan total kredit")
+		}).Error("Failed to get total credit")
 		return nil, err
 	}
 	newDebt := transaction.Total - totalCredit
@@ -92,15 +85,15 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 	if totalCredit >= transaction.Total {
 		err = uc.transactionRepo.UpdateStatusInvoicePaid(transaction.ID)
 		if err != nil {
-			tx.Rollback() // Rollback jika terjadi kesalahan
+			tx.Rollback() // Rollback in case of error
 			log.WithFields(log.Fields{
 				"invoiceNumber": payment.InvoiceNumber,
 				"error":         err,
-			}).Error("Gagal mengupdate status pembayaran faktur")
+			}).Error("Failed to update invoice payment status")
 			return nil, err
 		}
 	}
-	// Perbarui transaksi setelah pembaruan payment amount
+	// Update the transaction after the payment amount update
 	transaction.PaymentAmount = totalCredit
 	transaction.Debt = newDebt
 
@@ -113,14 +106,9 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 		log.WithFields(log.Fields{
 			"invoiceNumber": payment.InvoiceNumber,
 			"error":         err,
-		}).Error("Gagal menyelesaikan transaksi")
+		}).Error("Failed to complete the transaction")
 		return nil, err
 	}
-
-	// Log info: Pembuatan pembayaran kredit selesai
-	log.WithFields(log.Fields{
-		"invoiceNumber": payment.InvoiceNumber,
-	}).Info("Pembuatan pembayaran kredit selesai")
 
 	return creditPaymentResponse, nil
 }
@@ -128,9 +116,11 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 func (uc *creditPaymentUseCase) GetCreditPayments() ([]*model.CreditPayment, error) {
 	payments, err := uc.creditPaymentRepo.GetAllCreditPayments()
 	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to get all credit payments")
 		return nil, err
 	}
-	log.Info("Pembayaran kredit selesai")
 	return payments, nil
 }
 
@@ -144,8 +134,6 @@ func (uc *creditPaymentUseCase) GetCreditPaymentByID(id string) (*model.CreditPa
 }
 
 func (uc *creditPaymentUseCase) UpdateCreditPayment(payment *model.CreditPayment) error {
-	// Validasi atau logika bisnis sebelum memperbarui pembayaran kredit
-	// ...
 
 	err := uc.creditPaymentRepo.UpdateCreditPayment(payment)
 	if err != nil {
