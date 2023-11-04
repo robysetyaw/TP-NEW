@@ -3,7 +3,7 @@ package model
 import "time"
 
 type CustomerModel struct {
-	Id          string    `json:"-" gorm:"primaryKey"`
+	Id          string    `json:"customer_id" gorm:"primaryKey"`
 	FullName    string    `json:"fullname" binding:"required" gorm:"column:fullname"`
 	Address     string    `json:"address"`
 	CompanyId   string    `json:"company_id" binding:"required"`
