@@ -38,6 +38,10 @@ func (cc *CompanyController) CreateCompany(c *gin.Context) {
 	logrus.Infof("User %s is creating a company", username)
 
 	var company model.Company
+	if err := c.ShouldBindJSON(&company); err != nil {
+		utils.SendResponse(c, http.StatusBadRequest, "Bad request", nil)
+		return
+	}
 	company.CreatedBy = username
 	company.ID = uuid.New().String()
 	company.IsActive = true
