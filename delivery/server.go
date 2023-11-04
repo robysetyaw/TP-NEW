@@ -1,7 +1,6 @@
 package delivery
 
 import (
-	
 	"io/ioutil"
 	"os"
 	"path"
@@ -12,7 +11,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/rifflock/lfshook"
+
+	// "github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 	// "gopkg.in/olivere/elastic.v5"
 )
@@ -86,14 +86,14 @@ func NewServer() *Server {
 	// Atur level logging
 	logger.SetLevel(logrus.DebugLevel)
 
-	// Tambahkan hook untuk mengganti file log setiap hari
-	logrus.AddHook(lfshook.NewHook(
-		lfshook.PathMap{
-			logrus.InfoLevel:  logFullPath,
-			logrus.ErrorLevel: logFullPath,
-		},
-		&logrus.JSONFormatter{},
-	))
+	// // Tambahkan hook untuk mengganti file log setiap hari
+	// logrus.AddHook(lfshook.NewHook(
+	// 	lfshook.PathMap{
+	// 		logrus.InfoLevel:  logFullPath,
+	// 		logrus.ErrorLevel: logFullPath,
+	// 	},
+	// 	&logrus.JSONFormatter{},
+	// ))
 
 	// Set Logrus logger sebagai default logger
 	logrus.SetOutput(logger.Out)
