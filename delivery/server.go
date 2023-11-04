@@ -32,6 +32,7 @@ func (s *Server) initController() {
 	controller.NewTransactionController(s.engine, s.useCaseManager.GetTransactionUseCase())
 	controller.NewCreditPaymentController(s.engine, s.useCaseManager.GetCreditPaymentUseCase())
 	controller.NewCustomerController(s.engine, s.useCaseManager.GetCustomerUsecase())
+	controller.NewCompanyController(s.engine, s.useCaseManager.GetCompanyUsecase())
 }
 
 func NewServer() *Server {
@@ -55,10 +56,9 @@ func NewServer() *Server {
 	// Inisialisasi logger
 	logger := log.New()
 	logger.SetFormatter(&log.JSONFormatter{})
-	logger.SetOutput(os.Stdout) // Atur output ke stdout atau file log
-	gin.SetMode(gin.ReleaseMode)  // Mengubah mode Gin menjadi "release" di lingkungan produksi
+	logger.SetOutput(os.Stdout)        // Atur output ke stdout atau file log
+	gin.SetMode(gin.ReleaseMode)       // Mengubah mode Gin menjadi "release" di lingkungan produksi
 	gin.DefaultWriter = ioutil.Discard // Menyembunyikan log bawaan Gin
-
 
 	// Contoh pengaturan level logging
 	logger.SetLevel(log.DebugLevel)

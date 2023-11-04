@@ -12,6 +12,7 @@ type UsecaseManager interface {
 	GetTransactionUseCase() usecase.TransactionUseCase
 	GetCreditPaymentUseCase() usecase.CreditPaymentUseCase
 	GetCustomerUsecase() usecase.CustomerUsecase
+	GetCompanyUsecase() usecase.CompanyUseCase
 }
 
 type usecaseManager struct {
@@ -22,6 +23,7 @@ type usecaseManager struct {
 	creditPaymentUseCase usecase.CreditPaymentUseCase
 	transactionUseCase   usecase.TransactionUseCase
 	customerUsecase      usecase.CustomerUsecase
+	companyUsecase       usecase.CompanyUseCase
 }
 
 var onceLoadUserUsecase sync.Once
@@ -30,6 +32,14 @@ var onceLoadMeatUsecase sync.Once
 var onceLoadTxUsecase sync.Once
 var onceLoadCreditPaymentUseCase sync.Once
 var onceLoadCustomerUseCase sync.Once
+var onceLoadCompanyUsecase sync.Once
+
+func (um *usecaseManager) GetCompanyUsecase() usecase.CompanyUseCase {
+	onceLoadCompanyUsecase.Do(func() {
+		um.companyUsecase = usecase.NewCompanyUseCase(um.repoManager.GetCompanyRepo())
+	})
+	return um.companyUsecase
+}
 
 func (um *usecaseManager) GetCustomerUsecase() usecase.CustomerUsecase {
 	onceLoadCustomerUseCase.Do(func() {
