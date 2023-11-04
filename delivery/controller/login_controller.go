@@ -32,12 +32,12 @@ func (uc *LoginController) Login(c *gin.Context) {
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid username or password", nil)
 		return
 	}
-	logrus.Infof("User [%s] is logging in", loginData.Username)
+	logrus.Infof("[%s] is logging in", loginData.Username)
 	token, err := uc.loginUseCase.Login(loginData.Username, loginData.Password)
 	if err != nil {
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid username or password", nil)
 		return
 	}
-	logrus.Infof("User [%s] logged in successfully", loginData.Username)
+	logrus.Infof("[%s] logged in successfully", loginData.Username)
 	utils.SendResponse(c, http.StatusOK, "Login success", token)
 }

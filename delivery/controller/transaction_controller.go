@@ -38,7 +38,7 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Infof("user [%s] is creating a transaction", userName)
+	logrus.Infof("[%s] is creating a transaction", userName)
 
 	var request model.TransactionHeader
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -85,7 +85,7 @@ func (tc *TransactionController) GetAllTransactions(c *gin.Context) {
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Infof("user [%s] is getting all transaction", userName)
+	logrus.Infof("[%s] is getting all transaction", userName)
 
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page <= 0 {
@@ -125,7 +125,7 @@ func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 		logrus.Error(err)
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 	}
-	logrus.Infof("user [%s] is deleting a transaction", userName)
+	logrus.Infof("[%s] is deleting a transaction", userName)
 	id := c.Param("id")
 	err = tc.transactionUseCase.DeleteTransaction(id)
 	if err != nil {
@@ -146,7 +146,7 @@ func (tc *TransactionController) GetTransactionByInvoiceNumber(c *gin.Context) {
 		return
 
 	}
-	logrus.Infof("user [%s] is geting a transaction by invoice number", userName)
+	logrus.Infof("[%s] is geting a transaction by invoice number", userName)
 
 	invoice_number := c.Param("invoice_number")
 

@@ -35,7 +35,7 @@ func (mc *MeatController) CreateMeat(ctx *gin.Context) {
 		utils.SendResponse(ctx, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Infof("User [%s] is creating a meat", username)
+	logrus.Infof("[%s] is creating a meat", username)
 	var meat model.Meat
 	if err := ctx.ShouldBindJSON(&meat); err != nil {
 		logrus.Error(err)
@@ -67,7 +67,7 @@ func (mc *MeatController) GetAllMeats(c *gin.Context) {
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Info("User [", username, "] get all meats")
+	logrus.Info("[", username, "] get all meats")
 	meats, err := mc.meatUseCase.GetAllMeats()
 	if err != nil {
 		logrus.Error(err)
@@ -137,7 +137,7 @@ func (uc *MeatController) UpdateMeat(ctx *gin.Context) {
 	}
 	meat.UpdatedBy = userName
 	meat.ID = meatID
-	logrus.Infof("User [%s] is updating meat [%s]", userName, meatID)
+	logrus.Infof("[%s] is updating meat [%s]", userName, meatID)
 	if err := uc.meatUseCase.UpdateMeat(&meat); err != nil {
 		logrus.Error(err)
 		utils.SendResponse(ctx, http.StatusInternalServerError, "Failed to update meat", nil)

@@ -32,7 +32,7 @@ func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Infof("user [%s] is creating a credit payment", userName)
+	logrus.Infof("[%s] is creating a credit payment", userName)
 
 	var payment model.CreditPayment
 	if err := c.ShouldBindJSON(&payment); err != nil {
@@ -64,7 +64,7 @@ func (cc *CreditPaymentController) GetCreditPayments(c *gin.Context) {
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Infof("User [%s] is geting a credit payment", username)
+	logrus.Infof("[%s] is geting a credit payment", username)
 	payments, err := cc.creditPaymentUseCase.GetCreditPayments()
 	if err != nil {
 		logrus.Error(err)
@@ -120,7 +120,7 @@ func (cc *CreditPaymentController) GetCreditPaymentsByInvoiceNumber(c *gin.Conte
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Infof("user [%s] is geting a credit payment by invoice number %s", username, c.Param("invoice_number"))
+	logrus.Infof("[%s] is geting a credit payment by invoice number %s", username, c.Param("invoice_number"))
 	invoice_number := c.Param("invoice_number")
 
 	payments, err := cc.creditPaymentUseCase.GetCreditPaymentsByInvoiceNumber(invoice_number)

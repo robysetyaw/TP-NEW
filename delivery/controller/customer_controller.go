@@ -39,7 +39,7 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 	}
 
 	userName, err := utils.GetUsernameFromContext(c)
-	logrus.Info("user [%s] created customer %s ", userName, customer.FullName)
+	logrus.Info("[%s] created customer %s ", userName, customer.FullName)
 	if err != nil {
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
@@ -56,7 +56,7 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 		return
 	}
 
-	logrus.Info("user [%s] created succes create customer %s ", userName, customer.FullName)
+	logrus.Info("[%s] created succes create customer %s ", userName, customer.FullName)
 	utils.SendResponse(c, http.StatusOK, "success insert data customer", customers)
 }
 
@@ -83,7 +83,7 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 	}
 
-	logrus.Info("user [%s] updated succes update customer %s ", userName, customer.FullName)
+	logrus.Info("[%s] updated succes update customer %s ", userName, customer.FullName)
 	utils.SendResponse(c, http.StatusOK, "success update data customer", customer)
 }
 
@@ -93,14 +93,14 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
-	logrus.Info("user [%s] get all customer ", username)
+	logrus.Info("[%s] get all customer ", username)
 	customers, err := cc.customerUsecase.GetAllCustomers()
 	if err != nil {
 		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
-	logrus.Info("user [%s] get all customer ", username)
+	logrus.Info("[%s] get all customer ", username)
 	c.JSON(http.StatusOK, customers)
 }
 

@@ -35,7 +35,7 @@ func (cc *CompanyController) CreateCompany(c *gin.Context) {
 		logrus.Error(err)
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 	}
-	logrus.Infof("user [%s] is creating a company", username)
+	logrus.Infof("[%s] is creating a company", username)
 
 	var company model.Company
 	if err := c.ShouldBindJSON(&company); err != nil {
