@@ -3,7 +3,7 @@ package model
 import "time"
 
 type Company struct {
-	ID          string    `json:"id" binding:"required" gorm:"primary_key"`
+	ID          string    `json:"id" gorm:"primary_key"`
 	CompanyName string    `json:"company_name" binding:"required"`
 	Address     string    `json:"address"`
 	Email       string    `json:"email"`
