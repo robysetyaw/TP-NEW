@@ -70,8 +70,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	transaction.Address = customer.Address
 	transaction.PhoneNumber = customer.PhoneNumber
 	transaction.Company = company.CompanyName
-	transaction.CreatedBy = "admin"
-	transaction.UpdatedBy = "admin"
+	transaction.UpdatedBy = transaction.CreatedBy
 	transaction.PaymentStatus = "paid"
 
 	for _, detail := range transaction.TransactionDetails {
@@ -177,6 +176,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	}
 	logrus.WithFields(logrus.Fields{
 		"invoice_number": transaction.InvoiceNumber,
+		"username":       transaction.CreatedBy,
 	}).Info("Transaction created successfully")
 	return result, nil
 }
@@ -192,6 +192,7 @@ func (uc *transactionUseCase) GetAllTransactions(page int, itemsPerPage int) ([]
 	logrus.WithFields(logrus.Fields{
 		"page":           page,
 		"items_per_page": itemsPerPage,
+		"total_pages":    totalPages,
 	}).Info("Retrieved all transactions successfully")
 	return transactions, totalPages, nil
 }

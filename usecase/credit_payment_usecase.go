@@ -64,8 +64,8 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 	payment.PaymentDate = todayDate
 	payment.CreatedAt = createdat
 	payment.UpdatedAt = createdat
-	payment.CreatedBy = "admin"
-	payment.UpdatedBy = "admin"
+	// payment.CreatedBy = "admin"
+	payment.UpdatedBy = payment.CreatedBy
 
 	err = uc.creditPaymentRepo.CreateCreditPayment(payment)
 	if err != nil {

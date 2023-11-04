@@ -8,6 +8,7 @@ import (
 	"trackprosto/usecase"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type CreditPaymentController struct {
@@ -24,16 +25,24 @@ func NewCreditPaymentController(r *gin.Engine, creditPaymentUseCase usecase.Cred
 }
 
 func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
+
+	userName, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+		return
+	}
+	logrus.Infof("User %s is creating a credit payment", userName)
+	
 	var payment model.CreditPayment
 	if err := c.ShouldBindJSON(&payment); err != nil {
-		// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-
+	payment.CreatedBy = userName
 	transaction, err := cc.creditPaymentUseCase.CreateCreditPayment(&payment)
-	if err != nil {
-		// Handle error from use case
+	if err != nil {		
 		if err == utils.ErrInvoiceNumberNotExist {
 			utils.SendResponse(c, http.StatusNotFound, "Invoice number does not exist", nil)
 		} else if err == utils.ErrInvoiceAlreadyPaid {
@@ -41,21 +50,29 @@ func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 		} else {
 			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		}
+		logrus.Error(err)
 		return
 	}
-	// c.JSON(http.StatusOK, gin.H{"message": "Credit payment created successfully"})
+	logrus.Info("Credit Payment successfully added")
 	utils.SendResponse(c, http.StatusOK, "Credit Payment successfully added", transaction)
 }
 
 func (cc *CreditPaymentController) GetCreditPayments(c *gin.Context) {
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+		return
+	}
+	logrus.Infof("User [%s] is geting a credit payment", username)
 	payments, err := cc.creditPaymentUseCase.GetCreditPayments()
 	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
-	// c.JSON(http.StatusOK, payments)
+	logrus.Info("Credit Payment found", payments)
 	utils.SendResponse(c, http.StatusOK, "Success get credit payments", payments)
 }
 
@@ -97,15 +114,22 @@ func (cc *CreditPaymentController) UpdateCreditPayment(c *gin.Context) {
 }
 
 func (cc *CreditPaymentController) GetCreditPaymentsByInvoiceNumber(c *gin.Context) {
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+		return
+	}
+	logrus.Infof("User %s is geting a credit payment by invoice number %s", username, c.Param("invoice_number"))
 	invoice_number := c.Param("invoice_number")
 
 	payments, err := cc.creditPaymentUseCase.GetCreditPaymentsByInvoiceNumber(invoice_number)
 	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
-	// c.JSON(http.StatusOK, payments)
+	logrus.Info("Credit Payment found", payments)
 	utils.SendResponse(c, http.StatusOK, "Success get credit payments", payments)
 }

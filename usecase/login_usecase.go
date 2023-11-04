@@ -6,6 +6,7 @@ import (
 	"trackprosto/repository"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -28,12 +29,20 @@ func (uc *loginUseCase) Login(username, password string) (string, error) {
 	// Mengecek apakah pengguna dengan username tersebut ada di penyimpanan data
 	user, err := uc.userRepository.GetByUsername(username)
 	if err != nil {
-		return "", fmt.Errorf("failed to retrieve user: %v", err)
+		logrus.Errorf("Failed to retrieve user: %v", err)
+		return "", fmt.Errorf("invalid username or password")
+		// return "", fmt.Errorf("failed to retrieve user: %v", err)
+	}
+	if condition := user == nil; condition {
+		logrus.Info("User not found", user)
+		return "", fmt.Errorf("invalid username or password")
+		
 	}
 
 	// Verifikasi password pengguna dengan menggunakan bcrypt
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
+		logrus.Errorf("Failed to verify password: %v", err)
 		return "", fmt.Errorf("invalid username or password")
 	}
 

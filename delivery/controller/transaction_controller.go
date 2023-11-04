@@ -30,74 +30,81 @@ func NewTransactionController(r *gin.Engine, transactionUseCase usecase.Transact
 	return controller
 }
 
-	func (tc *TransactionController) CreateTransaction(c *gin.Context) {
+func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 
-		token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
-		if err != nil {
-			// c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
-			utils.SendResponse(c, http.StatusUnauthorized, "Invalid authorization header", nil)
-			return
-		}
-
-		claims, err := utils.VerifyJWTToken(token)
-		if err != nil {
-			// c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-			utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
-			return
-		}
-
-		userName := claims["username"].(string)
-		var request model.TransactionHeader
-		if err := c.ShouldBindJSON(&request); err != nil {
-			// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
-			return
-		}
-		logrus.Infof("User %s is creating a transaction", userName)
-		transaction, err := tc.transactionUseCase.CreateTransaction(&request)
-		if err != nil {
-			// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			if err == utils.ErrAmountGreaterThanTotal {
-				utils.SendResponse(c, http.StatusBadRequest, utils.ErrAmountGreaterThanTotal.Error(), nil)
-			} else {
-				utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
-			}
-			return
-		}
-
-		// c.JSON(http.StatusOK, gin.H{"message": "Transaction created successfully"})
-		utils.SendResponse(c, http.StatusOK, "Transaction created successfully", transaction)
+	
+	userName, err := utils.GetUsernameFromContext(c)
+	if condition := err != nil; condition {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+		return
 	}
+	logrus.Infof("User %s is creating a transaction", userName)
+
+	var request model.TransactionHeader
+	if err := c.ShouldBindJSON(&request); err != nil {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	request.CreatedBy = userName
+	transaction, err := tc.transactionUseCase.CreateTransaction(&request)
+	if err != nil {
+		logrus.Error(err)
+		if err == utils.ErrAmountGreaterThanTotal {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusBadRequest, utils.ErrAmountGreaterThanTotal.Error(), nil)
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		return
+	}
+
+	logrus.Info("Transaction created successfully, ", transaction)
+	utils.SendResponse(c, http.StatusOK, "Transaction created successfully", transaction)
+}
 
 func (tc *TransactionController) GetTransactionByID(c *gin.Context) {
 	id := c.Param("id")
 
 	transaction, err := tc.transactionUseCase.GetTransactionByID(id)
 	if err != nil {
-		// c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
 		utils.SendResponse(c, http.StatusNotFound, err.Error(), nil)
 		return
 	}
 
-	// c.JSON(http.StatusOK, transaction)
-	utils.SendResponse(c, http.StatusOK, "Transaction found", transaction)
+		utils.SendResponse(c, http.StatusOK, "Transaction found", transaction)
 }
 
 func (tc *TransactionController) GetAllTransactions(c *gin.Context) {
+
+	userName, err := utils.GetUsernameFromContext(c)
+	if condition := err != nil; condition {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+		return
+	}
+	logrus.Infof("User %s is getting all transaction", userName)
+
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page <= 0 {
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid page number", nil)
 		return
 	}
 
 	itemsPerPage, err := strconv.Atoi(c.DefaultQuery("itemsPerPage", "10"))
 	if err != nil || itemsPerPage <= 0 {
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid itemsPerPage", nil)
 		return
 	}
 
 	transactions, totalPages, err := tc.transactionUseCase.GetAllTransactions(page, itemsPerPage)
 	if err != nil {
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
@@ -108,33 +115,49 @@ func (tc *TransactionController) GetAllTransactions(c *gin.Context) {
 		"totalPages":   totalPages,
 	}
 
+	logrus.Info("Success get all transactions",paginationData ,transactions)
 	utils.SendResponse(c, http.StatusOK, "Transactions found", map[string]interface{}{"transactions": transactions, "pagination": paginationData})
 }
 
 func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
-	id := c.Param("id")
 
-	err := tc.transactionUseCase.DeleteTransaction(id)
+	userName, err := utils.GetUsernameFromContext(c)
+	if condition := err != nil; condition {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+	}
+	logrus.Infof("User %s is deleting a transaction", userName)
+	id := c.Param("id")
+	err = tc.transactionUseCase.DeleteTransaction(id)
 	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete transaction"})
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
-
-	// c.JSON(http.StatusOK, gin.H{"message": "Transaction deleted successfully"})
+	logrus.Info("Transaction deleted successfully, id = ", id)
 	utils.SendResponse(c, http.StatusOK, "Transaction deleted successfully", nil)
 }
 
 func (tc *TransactionController) GetTransactionByInvoiceNumber(c *gin.Context) {
+
+	userName, err := utils.GetUsernameFromContext(c)
+	if condition := err != nil; condition {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+		return
+		
+	}
+	logrus.Infof("User %s is geting a transaction by invoice number", userName)
+
 	invoice_number := c.Param("invoice_number")
 
 	transaction, err := tc.transactionUseCase.GetTransactionByInvoiceNumber(invoice_number)
 	if err != nil {
-		// c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusNotFound, err.Error(), nil)
 		return
 	}
 
-	// c.JSON(http.StatusOK, transaction)
+	logrus.Info("Transaction found", transaction)	
 	utils.SendResponse(c, http.StatusOK, "Transaction found", transaction)
 }

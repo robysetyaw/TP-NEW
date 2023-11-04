@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"github.com/sirupsen/logrus"
 )
 
 func ExtractTokenFromAuthHeader(authHeader string) (string, error) {
@@ -67,4 +68,26 @@ func SendResponse(c *gin.Context, statusCode int, message string, data interface
 		Message:    message,
 		Data:       data,
 	})
+}
+
+func GetUsernameFromContext(c *gin.Context) (string, error) {
+    token, err := ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+    if err != nil {
+		logrus.Error(err)
+        return "", err
+    }
+
+    claims, err := VerifyJWTToken(token)
+    if err != nil {
+		logrus.Error(err)
+        return "", err
+    }
+
+    username, ok := claims["username"].(string)
+    if !ok {
+		logrus.Error(err)
+        return "", errors.New("username not found in claims")
+    }
+
+    return username, nil
 }

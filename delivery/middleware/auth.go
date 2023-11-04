@@ -5,6 +5,7 @@ import (
 	"trackprosto/delivery/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func JWTAuthMiddleware() gin.HandlerFunc {
@@ -12,7 +13,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		// Mendapatkan token dari header Authorization
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			// c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+			logrus.Error("Authorization header is required")
 			utils.SendResponse(c, http.StatusUnauthorized, "Authorization header is required", nil)
 			c.Abort()
 			return
@@ -20,7 +21,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 
 		token, err := utils.ExtractTokenFromAuthHeader(authHeader)
 		if err != nil {
-			// c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid authorization token"})
+			logrus.Error("Invalid authorization token")
 			utils.SendResponse(c, http.StatusBadRequest, "Invalid authorization token", nil)
 			c.Abort()
 			return
@@ -28,7 +29,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 
 		claims, err := utils.VerifyJWTToken(token)
 		if err != nil {
-			// c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token or expired"})
+			logrus.Error("Invalid token or expired")
 			utils.SendResponse(c, http.StatusUnauthorized, "Invalid token or expired", nil)
 			c.Abort()
 			return
@@ -37,13 +38,11 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		// Memeriksa peran pengguna
 		role, ok := claims["role"].(string)
 		if !ok || role != "admin" {
-			// c.JSON(http.StatusForbidden, gin.H{"error": "Access denied. Admin role required"})
+			logrus.Error("Access denied. Admin role required")
 			utils.SendResponse(c, http.StatusForbidden, "Access denied. Admin role required", nil)
 			c.Abort()
 			return
 		}
-
-		// Menyimpan klaim dalam konteks untuk digunakan oleh handler API
 		c.Set("claims", claims)
 
 		c.Next()

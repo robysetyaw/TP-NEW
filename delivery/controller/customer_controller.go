@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"time"
 	"trackprosto/delivery/middleware"
 	"trackprosto/delivery/utils"
 	model "trackprosto/models"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type CustomerController struct {
@@ -32,40 +34,29 @@ func NewCustomerController(r *gin.Engine, customerUsecase usecase.CustomerUsecas
 func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 	var customer model.CustomerModel
 	if err := c.ShouldBindJSON(&customer); err != nil {
-		// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
-	token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+	userName, err := utils.GetUsernameFromContext(c)
+	logrus.Info("user %s created customer %s ", userName, customer.FullName)
 	if err != nil {
-		// c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
-		utils.SendResponse(c, http.StatusUnauthorized, "Invalid authorization header", nil)
+		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
-	}
 
-	claims, err := utils.VerifyJWTToken(token)
-	if err != nil {
-		// c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
-		return
 	}
-
-	userName := claims["username"].(string)
 	customer.CreatedBy = userName
 	customer.Id = uuid.New().String()
 	customer.Debt = 0
 
 	customers, err := cc.customerUsecase.CreateCustomer(&customer)
 	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"message": "success insert data customer",
-	// })
+	logrus.Info("user %s created succes create customer %s ", userName, customer.FullName)
 	utils.SendResponse(c, http.StatusOK, "success insert data customer", customers)
 }
 
@@ -77,40 +68,44 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+	userName, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
+		logrus.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	claims, err := utils.VerifyJWTToken(token)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-		return
-	}
-	userName := claims["username"].(string)
+	customer.UpdatedAt = time.Now()
 	customer.UpdatedBy = userName
 	customer.Id = customerID
 
 	if err := cc.customerUsecase.UpdateCustomer(&customer); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "success update data company",
-	})
+	logrus.Info("user %s updated succes update customer %s ", userName, customer.FullName)
+	utils.SendResponse(c, http.StatusOK, "success update data customer", customer)
 }
 
 func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
+	username ,err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+	logrus.Info("user %s get all customer ", username)
 	customers, err := cc.customerUsecase.GetAllCustomers()
 	if err != nil {
+		logrus.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
+	logrus.Info("user %s get all customer ", username)
 	c.JSON(http.StatusOK, customers)
 }
 
 func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
+	
 	username := c.Param("username")
 
 	expenditure, err := cc.customerUsecase.GetCustomerById(username)

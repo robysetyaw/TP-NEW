@@ -7,6 +7,7 @@ import (
 	"trackprosto/usecase"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type LoginController struct {
@@ -23,24 +24,20 @@ func NewLoginController(r *gin.Engine, loginUC usecase.LoginUseCase) {
 func (uc *LoginController) Login(c *gin.Context) {
 	var loginData model.LoginData
 	if err := c.ShouldBindJSON(&loginData); err != nil {
-		// c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid login data"})
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid login data", nil)
 		return
 	}
 
 	if loginData.Username == "" || loginData.Password == "" {
-		// c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid username or password"})
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid username or password", nil)
 		return
 	}
-
+	logrus.Infof("User [%s] is logging in", loginData.Username)
 	token, err := uc.loginUseCase.Login(loginData.Username, loginData.Password)
 	if err != nil {
-		// c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid username or password", nil)
 		return
 	}
-
-	// c.JSON(http.StatusOK, gin.H{"token ": token})
+	logrus.Infof("User [%s] logged in successfully", loginData.Username)
 	utils.SendResponse(c, http.StatusOK, "Login success", token)
 }
