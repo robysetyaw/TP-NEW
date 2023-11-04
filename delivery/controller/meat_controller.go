@@ -67,7 +67,7 @@ func (mc *MeatController) GetAllMeats(c *gin.Context) {
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Info("User ", username, " get all meats")
+	logrus.Info("User [", username, "] get all meats")
 	meats, err := mc.meatUseCase.GetAllMeats()
 	if err != nil {
 		logrus.Error(err)
@@ -133,7 +133,7 @@ func (uc *MeatController) UpdateMeat(ctx *gin.Context) {
 		logrus.Error(err)
 		utils.SendResponse(ctx, http.StatusUnauthorized, "Invalid token", nil)
 		return
-		
+
 	}
 	meat.UpdatedBy = userName
 	meat.ID = meatID

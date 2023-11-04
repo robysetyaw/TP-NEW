@@ -32,8 +32,8 @@ func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Infof("User %s is creating a credit payment", userName)
-	
+	logrus.Infof("user [%s] is creating a credit payment", userName)
+
 	var payment model.CreditPayment
 	if err := c.ShouldBindJSON(&payment); err != nil {
 		logrus.Error(err)
@@ -42,7 +42,7 @@ func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 	}
 	payment.CreatedBy = userName
 	transaction, err := cc.creditPaymentUseCase.CreateCreditPayment(&payment)
-	if err != nil {		
+	if err != nil {
 		if err == utils.ErrInvoiceNumberNotExist {
 			utils.SendResponse(c, http.StatusNotFound, "Invoice number does not exist", nil)
 		} else if err == utils.ErrInvoiceAlreadyPaid {
@@ -120,7 +120,7 @@ func (cc *CreditPaymentController) GetCreditPaymentsByInvoiceNumber(c *gin.Conte
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Infof("User %s is geting a credit payment by invoice number %s", username, c.Param("invoice_number"))
+	logrus.Infof("user [%s] is geting a credit payment by invoice number %s", username, c.Param("invoice_number"))
 	invoice_number := c.Param("invoice_number")
 
 	payments, err := cc.creditPaymentUseCase.GetCreditPaymentsByInvoiceNumber(invoice_number)

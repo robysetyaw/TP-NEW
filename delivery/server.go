@@ -1,15 +1,20 @@
 package delivery
 
 import (
+	
 	"io/ioutil"
 	"os"
+	"path"
+	"time"
 	"trackprosto/config"
 	"trackprosto/delivery/controller"
 	"trackprosto/manager"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+	"github.com/rifflock/lfshook"
+	"github.com/sirupsen/logrus"
+	// "gopkg.in/olivere/elastic.v5"
 )
 
 type Server struct {
@@ -54,14 +59,48 @@ func NewServer() *Server {
 	usecase := manager.NewUsecaseManager(repo)
 
 	// Inisialisasi logger
-	logger := log.New()
-	logger.SetFormatter(&log.JSONFormatter{})
-	logger.SetOutput(os.Stdout)        // Atur output ke stdout atau file log
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+	// logger.SetOutput(os.Stdout)        // Atur output ke stdout atau file log
+	logPath := "log/"
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+		// Buat direktori log jika belum ada
+		err := os.Mkdir(logPath, os.ModePerm)
+		if err != nil {
+			logrus.Errorf("Failed to create log directory: %v", err)
+			logger.SetOutput(ioutil.Discard) // Jangan menulis log jika gagal membuat direktori
+		}
+	}
+
+	logFile := time.Now().Format("2006-01-02") + ".log"
+	logFullPath := path.Join(logPath, logFile)
+
+	file, err := os.OpenFile(logFullPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		logger.SetOutput(file)
+	} else {
+		logrus.Errorf("Failed to open log file: %v", err)
+		// logger.SetOutput(ioutil.Discard) // Jangan menulis log jika gagal membuka file
+	}
+
+	// Atur level logging
+	logger.SetLevel(logrus.DebugLevel)
+
+	// Tambahkan hook untuk mengganti file log setiap hari
+	logrus.AddHook(lfshook.NewHook(
+		lfshook.PathMap{
+			logrus.InfoLevel:  logFullPath,
+			logrus.ErrorLevel: logFullPath,
+		},
+		&logrus.JSONFormatter{},
+	))
+
+	// Set Logrus logger sebagai default logger
+	logrus.SetOutput(logger.Out)
+	logrus.SetLevel(logger.Level)
+
 	gin.SetMode(gin.ReleaseMode)       // Mengubah mode Gin menjadi "release" di lingkungan produksi
 	gin.DefaultWriter = ioutil.Discard // Menyembunyikan log bawaan Gin
-
-	// Contoh pengaturan level logging
-	logger.SetLevel(log.DebugLevel)
 
 	return &Server{useCaseManager: usecase, engine: r}
 }
