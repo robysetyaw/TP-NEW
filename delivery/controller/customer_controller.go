@@ -65,14 +65,14 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 	customerID := c.Param("id")
 	var customer model.CustomerModel
 	if err := c.ShouldBindJSON(&customer); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	userName, err := utils.GetUsernameFromContext(c)
 	if err != nil {
 		logrus.Error(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 	customer.UpdatedAt = time.Now()
