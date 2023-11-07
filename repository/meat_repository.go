@@ -52,7 +52,7 @@ func (r *meatRepository) GetMeatByName(name string) (*model.Meat, error) {
 
 func (r *meatRepository) GetMeatByID(id string) (*model.Meat, error) {
 	var meat model.Meat
-	if err := r.db.First(&meat, "id = ?", id).Error; err != nil {
+	if err := r.db.First(&meat, "id = ? AND is_active = ?", id,true).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}

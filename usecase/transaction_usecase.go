@@ -106,12 +106,12 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	transaction.PaymentStatus = "paid"
 
 	for _, detail := range transaction.TransactionDetails {
-		meat, err := uc.meatRepo.GetMeatByName(detail.MeatName)
+		meat, err := uc.meatRepo.GetMeatByID(detail.MeatID)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"error":     err,
 				"meat_name": detail.MeatName,
-			}).Error("Failed to get meat by name")
+			}).Error("Failed to get meat by id")
 			return nil, err
 		}
 		if meat == nil {
