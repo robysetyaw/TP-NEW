@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 	"trackprosto/delivery/middleware"
 	"trackprosto/delivery/utils"
@@ -91,17 +92,33 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
 		logrus.Error(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 	}
 	logrus.Info("[%s] get all customer ", username)
-	customers, err := cc.customerUsecase.GetAllCustomers()
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page <= 0 {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid page number", nil)
+		return
+	}
+
+	itemsPerPage, err := strconv.Atoi(c.DefaultQuery("itemsPerPage", "10"))
+	if err != nil || itemsPerPage <= 0 {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid itemsPerPage", nil)
+		return
+	}
+	customers,totalPages ,err := cc.customerUsecase.GetAllCustomers(page, itemsPerPage)
 	if err != nil {
 		logrus.Error(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 	}
 
 	logrus.Info("[%s] get all customer ", username)
-	c.JSON(http.StatusOK, customers)
+	utils.SendResponse(c, http.StatusOK, "success get all customer", map[string]interface{}{
+		"customers": customers,
+		"totalPages": totalPages,
+	})
 }
 
 func (cc *CustomerController) GetCustomerByID(c *gin.Context) {

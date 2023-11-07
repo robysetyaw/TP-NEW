@@ -11,7 +11,7 @@ type CustomerRepository interface {
 	UpdateCustomer(*model.CustomerModel) error
 	GetCustomerById(string) (*model.CustomerModel, error)
 	GetCustomerByName(string) (*model.CustomerModel, error)
-	GetAllCustomer() ([]*model.CustomerModel, error)
+	GetAllCustomer(page int, itemsPerPage int) ([]*model.CustomerModel, int, error)
 	DeleteCustomer(string) error
 }
 
@@ -53,12 +53,29 @@ func (repo *customerRepository) GetCustomerByName(name string) (*model.CustomerM
 	return &customer, nil
 }
 
-func (repo *customerRepository) GetAllCustomer() ([]*model.CustomerModel, error) {
+func (repo *customerRepository) GetAllCustomer(page int, itemsPerPage int) ([]*model.CustomerModel, int, error) {
 	var customers []*model.CustomerModel
-	if err := repo.db.Find(&customers).Error; err != nil {
-		return nil, err
+	if page < 1 {
+		page = 1
 	}
-	return customers, nil
+
+	var totalCount int64
+	if err := repo.db.Model(&model.Meat{}).Where("is_active = true").Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	totalPages := int((totalCount + int64(itemsPerPage) - 1) / int64(itemsPerPage))
+
+	if page > totalPages {
+		page = totalPages
+	}
+
+	offset := (page - 1) * itemsPerPage
+	if err := repo.db.Where("is_active = ?", true).Offset(offset).Limit(itemsPerPage).
+		Order("created_at desc").Find(&customers).Error; err != nil {
+		return nil, 0, err
+	}
+	return customers, totalPages, nil
 }
 
 func (repo *customerRepository) DeleteCustomer(id string) error {
