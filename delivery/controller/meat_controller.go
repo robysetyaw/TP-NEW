@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
 	"trackprosto/delivery/middleware"
 	"trackprosto/delivery/utils"
 	model "trackprosto/models"
@@ -68,14 +69,32 @@ func (mc *MeatController) GetAllMeats(c *gin.Context) {
 		return
 	}
 	logrus.Info("[", username, "] get all meats")
-	meats, err := mc.meatUseCase.GetAllMeats()
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page <= 0 {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid page number", nil)
+		return
+	}
+
+	itemsPerPage, err := strconv.Atoi(c.DefaultQuery("itemsPerPage", "10"))
+	if err != nil || itemsPerPage <= 0 {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid itemsPerPage", nil)
+		return
+	}
+	meats, totalPages, err := mc.meatUseCase.GetAllMeats(page, itemsPerPage)
 	if err != nil {
 		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get meats", nil)
 		return
 	}
-	logrus.Info("Success get all meats", meats)
-	utils.SendResponse(c, http.StatusOK, "Success", meats)
+	paginationData := map[string]interface{}{
+		"page":         page,
+		"itemsPerPage": itemsPerPage,
+		"totalPages":   totalPages,
+	}
+	logrus.Info("Success get all meats", paginationData, meats)
+	utils.SendResponse(c, http.StatusOK, "Success", map[string]interface{}{"pagination": paginationData, "meats": meats})
 }
 
 func (mc *MeatController) GetMeatByName(c *gin.Context) {

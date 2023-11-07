@@ -13,7 +13,7 @@ import (
 type MeatUseCase interface {
 	CreateMeat(meat *model.Meat) error
 	GetMeatById(string) (*model.Meat, error)
-	GetAllMeats() ([]*model.MeatWithStock, error)
+	GetAllMeats(page int, itemsPerPage int) ([]*model.MeatWithStock, int, error)
 	GetMeatByName(string) (*model.Meat, error)
 	UpdateMeat(meat *model.Meat) error
 	DeleteMeat(string) error
@@ -47,11 +47,11 @@ func (ms *meatUseCase) CreateMeat(meat *model.Meat) error {
 	return nil
 }
 
-func (mc *meatUseCase) GetAllMeats() ([]*model.MeatWithStock, error) {
-	meats, err := mc.meatRepository.GetAllMeats()
+func (mc *meatUseCase) GetAllMeats(page int, itemsPerPage int) ([]*model.MeatWithStock, int, error) {
+	meats, totalPages, err := mc.meatRepository.GetAllMeats(page, itemsPerPage)
 	if err != nil {
 		log.WithField("error", err).Error("Failed to get all meats")
-		return nil, err
+		return nil, 0, err
 	}
 	todayDate := time.Now().Format("2006-01-02")
 	var meatsWithStocks []*model.MeatWithStock
@@ -59,7 +59,7 @@ func (mc *meatUseCase) GetAllMeats() ([]*model.MeatWithStock, error) {
 		stockIn, stockOut, err := mc.txRepository.CalculateMeatStockByDate(meat.ID, todayDate)
 		if err != nil {
 			log.WithField("error", err).Error("Failed to calculate meat stock")
-			return nil, err
+			return nil, 0 ,err
 		}
 		meatWithStock := &model.MeatWithStock{
 			Meat:     meat,
@@ -69,7 +69,7 @@ func (mc *meatUseCase) GetAllMeats() ([]*model.MeatWithStock, error) {
 		meatsWithStocks = append(meatsWithStocks, meatWithStock)
 	}
 
-	return meatsWithStocks, nil
+	return meatsWithStocks, totalPages ,nil
 }
 
 func (mc *meatUseCase) GetMeatByName(name string) (*model.Meat, error) {
