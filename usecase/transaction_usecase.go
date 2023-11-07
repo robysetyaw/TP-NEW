@@ -42,20 +42,52 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		return nil, err
 	}
 
-	customer, err := uc.customerRepo.GetCustomerById(transaction.CustomerID)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-		}).Error("Failed to get customer by ID")
-		return nil, fmt.Errorf("failed to get customer by id: %w", err)
+	// Using goroutine to retrieve customer data
+	customerCh := make(chan *model.CustomerModel, 1)
+	go func() {
+		customer, err := uc.customerRepo.GetCustomerById(transaction.CustomerID)
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+			}).Error("Failed to get customer by ID")
+			customerCh <- nil
+			return
+		}
+		customerCh <- customer
+	}()
+
+	// Retrieve customer data
+	customer := <-customerCh
+
+	// Check if customer data is available before proceeding
+	if customer == nil {
+		logrus.Error("Customer data is not available")
+		return nil, fmt.Errorf("customer data not found")
 	}
-	company, err := uc.companyRepo.GetCompanyById(customer.CompanyId)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-		}).Error("Failed to get company by ID")
-		return nil, fmt.Errorf("failed to get company by id: %w", err)
+
+	// Using goroutine to retrieve company data
+	companyCh := make(chan *model.Company, 1)
+	go func() {
+		company, err := uc.companyRepo.GetCompanyById(customer.CompanyId)
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+			}).Error("Failed to get company by ID")
+			companyCh <- nil
+			return
+		}
+		companyCh <- company
+	}()
+
+	// Retrieve company data
+	company := <-companyCh
+
+	// Check if company data is available before proceeding
+	if company == nil {
+		logrus.Error("Company data is not available")
+		return nil, fmt.Errorf("company data not found")
 	}
+
 	invoiceNumberFormat := "MJP-%s-%04d"
 
 	if transaction.TxType == "out" {
@@ -139,16 +171,16 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		transaction.Debt = newTotal - transaction.PaymentAmount
 	}
 
-	uc.creditPaymentRepo.CreateCreditPayment(&model.CreditPayment{
-		ID:            uuid.New().String(),
-		InvoiceNumber: transaction.InvoiceNumber,
-		Amount:        transaction.PaymentAmount,
-		PaymentDate:   transaction.Date,
-		CreatedAt:     transaction.CreatedAt,
-		UpdatedAt:     transaction.CreatedAt,
-		CreatedBy:     transaction.CreatedBy,
-		UpdatedBy:     transaction.CreatedBy,
-	})
+	// uc.creditPaymentRepo.CreateCreditPayment(&model.CreditPayment{
+	// 	ID:            uuid.New().String(),
+	// 	InvoiceNumber: transaction.InvoiceNumber,
+	// 	Amount:        transaction.PaymentAmount,
+	// 	PaymentDate:   transaction.Date,
+	// 	CreatedAt:     transaction.CreatedAt,
+	// 	UpdatedAt:     transaction.CreatedAt,
+	// 	CreatedBy:     transaction.CreatedBy,
+	// 	UpdatedBy:     transaction.CreatedBy,
+	// })
 
 	// Create transaction header
 	result, err := uc.transactionRepo.CreateTransactionHeader(transaction)
@@ -174,6 +206,20 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		}).Error("Failed to commit transaction")
 		return nil, err
 	}
+
+	go func() {
+		uc.creditPaymentRepo.CreateCreditPayment(&model.CreditPayment{
+			ID:            uuid.New().String(),
+			InvoiceNumber: transaction.InvoiceNumber,
+			Amount:        transaction.PaymentAmount,
+			PaymentDate:   transaction.Date,
+			CreatedAt:     transaction.CreatedAt,
+			UpdatedAt:     transaction.CreatedAt,
+			CreatedBy:     transaction.CreatedBy,
+			UpdatedBy:     transaction.CreatedBy,
+		})
+	}()
+
 	logrus.WithFields(logrus.Fields{
 		"invoice_number": transaction.InvoiceNumber,
 		"username":       transaction.CreatedBy,
