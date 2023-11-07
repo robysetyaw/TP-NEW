@@ -1,5 +1,7 @@
 .vscode/launch.json
 __debug_bin2835466665.exe
-.exe
+*.exe
 __debug_bin208420753.exe
 __debug_bin2727587187.exe
+__debug_bin759298674.exe
+/log
