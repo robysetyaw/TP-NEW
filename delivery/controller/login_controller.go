@@ -24,19 +24,28 @@ func NewLoginController(r *gin.Engine, loginUC usecase.LoginUseCase) {
 func (uc *LoginController) Login(c *gin.Context) {
 	var loginData model.LoginData
 	if err := c.ShouldBindJSON(&loginData); err != nil {
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid login data", nil)
 		return
 	}
 
 	if loginData.Username == "" || loginData.Password == "" {
+		logrus.Error("Invalid username or password")
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid username or password", nil)
 		return
 	}
 	logrus.Infof("[%s] is logging in", loginData.Username)
 	token, err := uc.loginUseCase.Login(loginData.Username, loginData.Password)
 	if err != nil {
-		utils.SendResponse(c, http.StatusUnauthorized, "Invalid username or password", nil)
-		return
+		if err == utils.ErrInvalidUsernamePassword {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusUnauthorized, "Invalid username or password", nil)
+			return
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, "Failed to login", nil)
+			return
+		}
 	}
 	logrus.Infof("[%s] logged in successfully", loginData.Username)
 	utils.SendResponse(c, http.StatusOK, "Login success", token)

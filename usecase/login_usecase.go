@@ -3,6 +3,7 @@ package usecase
 import (
 	"fmt"
 	"time"
+	"trackprosto/delivery/utils"
 	"trackprosto/repository"
 
 	"github.com/golang-jwt/jwt"
@@ -30,25 +31,24 @@ func (uc *loginUseCase) Login(username, password string) (string, error) {
 	user, err := uc.userRepository.GetByUsername(username)
 	if err != nil {
 		logrus.Errorf("Failed to retrieve user: %v", err)
-		return "", fmt.Errorf("invalid username or password")
-		// return "", fmt.Errorf("failed to retrieve user: %v", err)
+		return "", fmt.Errorf("failed to retrieve user")
 	}
 	if condition := user == nil; condition {
 		logrus.Info("User not found", user)
-		return "", fmt.Errorf("invalid username or password")
-		
+		return "", utils.ErrInvalidUsernamePassword
 	}
 
 	// Verifikasi password pengguna dengan menggunakan bcrypt
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		logrus.Errorf("Failed to verify password: %v", err)
-		return "", fmt.Errorf("invalid username or password")
+		return "", utils.ErrInvalidUsernamePassword
 	}
 
 	// Menghasilkan token JWT
 	token, err := generateJWTToken(user.ID, user.Username, user.Role)
 	if err != nil {
+		logrus.Errorf("Failed to generate token: %v", err)
 		return "", fmt.Errorf("failed to generate token: %v", err)
 	}
 
