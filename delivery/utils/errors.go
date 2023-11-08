@@ -7,5 +7,6 @@ var (
 	ErrInvoiceAlreadyPaid     = errors.New("Invoice is already paid")
 	ErrAmountGreaterThanTotal = errors.New("Amount is greater than total transaction")
 	ErrMeatNameAlreadyExist   = errors.New("Meatname already exists")
-	ErrMeatNotFound            = errors.New("Meat not found")
+	ErrMeatNotFound           = errors.New("Meat not found")
+	ErrCustomerNotFound       = errors.New("Customer not found")
 )

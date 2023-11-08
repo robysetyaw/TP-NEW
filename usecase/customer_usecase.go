@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"trackprosto/delivery/utils"
 	model "trackprosto/models"
 	"trackprosto/repository"
 
@@ -36,6 +37,20 @@ func (uc *customerUsecase) CreateCustomer(customer *model.CustomerModel) (*model
 }
 
 func (uc *customerUsecase) UpdateCustomer(customer *model.CustomerModel) error {
+	currentCustomer, err := uc.GetCustomerById(customer.Id)
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	if currentCustomer == nil {
+		logrus.Error(utils.ErrCustomerNotFound)
+		return utils.ErrCustomerNotFound
+	}
+	customer.FullName = utils.NonEmpty(customer.FullName, currentCustomer.FullName)
+	customer.Address = utils.NonEmpty(customer.Address, currentCustomer.Address)
+	customer.PhoneNumber = utils.NonEmpty(customer.PhoneNumber, currentCustomer.PhoneNumber)
+	customer.CreatedAt = currentCustomer.CreatedAt
+	customer.CreatedBy = currentCustomer.CreatedBy
 	return uc.customerRepo.UpdateCustomer(customer)
 }
 
@@ -48,7 +63,7 @@ func (uc *customerUsecase) GetCustomerByName(name string) (*model.CustomerModel,
 }
 
 func (uc *customerUsecase) GetAllCustomers(page int, itemsPerPage int) ([]*model.CustomerModel, int, error) {
-	customers, totalPages, err  := uc.customerRepo.GetAllCustomer(page, itemsPerPage)
+	customers, totalPages, err := uc.customerRepo.GetAllCustomer(page, itemsPerPage)
 	if err != nil {
 		logrus.Error(err)
 		return nil, 0, err

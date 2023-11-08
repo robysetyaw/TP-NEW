@@ -80,8 +80,14 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 	customer.Id = customerID
 
 	if err := cc.customerUsecase.UpdateCustomer(&customer); err != nil {
-		logrus.Error(err)
-		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		if err == utils.ErrCustomerNotFound {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusNotFound, "Customer not found", nil)
+			return
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		}
 	}
 
 	logrus.Info("[%s] updated succes update customer %s ", userName, customer.FullName)
@@ -108,7 +114,7 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid itemsPerPage", nil)
 		return
 	}
-	customers,totalPages ,err := cc.customerUsecase.GetAllCustomers(page, itemsPerPage)
+	customers, totalPages, err := cc.customerUsecase.GetAllCustomers(page, itemsPerPage)
 	if err != nil {
 		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
@@ -116,7 +122,7 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 
 	logrus.Info("[%s] get all customer ", username)
 	utils.SendResponse(c, http.StatusOK, "success get all customer", map[string]interface{}{
-		"customers": customers,
+		"customers":  customers,
 		"totalPages": totalPages,
 	})
 }
