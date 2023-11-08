@@ -158,9 +158,15 @@ func (uc *MeatController) UpdateMeat(ctx *gin.Context) {
 	meat.ID = meatID
 	logrus.Infof("[%s] is updating meat [%s]", userName, meatID)
 	if err := uc.meatUseCase.UpdateMeat(&meat); err != nil {
-		logrus.Error(err)
-		utils.SendResponse(ctx, http.StatusInternalServerError, "Failed to update meat", nil)
-		return
+		if err == utils.ErrMeatNotFound {
+			logrus.Error(err)
+			utils.SendResponse(ctx, http.StatusNotFound, "Meat not found", nil)
+			return
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(ctx, http.StatusInternalServerError, "Failed to update meat", nil)
+			return
+		}
 	}
 
 	logrus.Info("Meat updated successfully", meat)

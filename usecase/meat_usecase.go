@@ -122,12 +122,12 @@ func (uc *meatUseCase) UpdateMeat(meat *model.Meat) error {
 	}
 	if currentMeatValue == nil {
 		log.WithField("meatID", meat.ID).Error("Meat not found")
-		return fmt.Errorf("meat not found")
+		return utils.ErrMeatNotFound
 	}
 	existingMeat, _ := uc.meatRepository.GetMeatByName(meat.Name)
 	if existingMeat != nil && existingMeat.ID != meat.ID {
 		log.WithField("meatName", meat.Name).Error("Meat name already exists")
-		return fmt.Errorf("meat name already exists")
+		return utils.ErrMeatNameAlreadyExist
 	}
 	meat.CreatedBy = currentMeatValue.CreatedBy
 	meat.CreatedAt = currentMeatValue.CreatedAt
