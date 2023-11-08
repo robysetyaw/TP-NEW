@@ -71,23 +71,37 @@ func SendResponse(c *gin.Context, statusCode int, message string, data interface
 }
 
 func GetUsernameFromContext(c *gin.Context) (string, error) {
-    token, err := ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
-    if err != nil {
+	token, err := ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+	if err != nil {
 		logrus.Error(err)
-        return "", err
-    }
+		return "", err
+	}
 
-    claims, err := VerifyJWTToken(token)
-    if err != nil {
+	claims, err := VerifyJWTToken(token)
+	if err != nil {
 		logrus.Error(err)
-        return "", err
-    }
+		return "", err
+	}
 
-    username, ok := claims["username"].(string)
-    if !ok {
+	username, ok := claims["username"].(string)
+	if !ok {
 		logrus.Error(err)
-        return "", errors.New("username not found in claims")
-    }
+		return "", errors.New("username not found in claims")
+	}
 
-    return username, nil
+	return username, nil
+}
+
+func NonEmpty(value, defaultValue string) string {
+	if value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func NonZero(value, defaultValue float64) float64 {
+	if value != 0 {
+		return value
+	}
+	return defaultValue
 }

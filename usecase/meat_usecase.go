@@ -59,7 +59,7 @@ func (mc *meatUseCase) GetAllMeats(page int, itemsPerPage int) ([]*model.MeatWit
 		stockIn, stockOut, err := mc.txRepository.CalculateMeatStockByDate(meat.ID, todayDate)
 		if err != nil {
 			log.WithField("error", err).Error("Failed to calculate meat stock")
-			return nil, 0 ,err
+			return nil, 0, err
 		}
 		meatWithStock := &model.MeatWithStock{
 			Meat:     meat,
@@ -69,7 +69,7 @@ func (mc *meatUseCase) GetAllMeats(page int, itemsPerPage int) ([]*model.MeatWit
 		meatsWithStocks = append(meatsWithStocks, meatWithStock)
 	}
 
-	return meatsWithStocks, totalPages ,nil
+	return meatsWithStocks, totalPages, nil
 }
 
 func (mc *meatUseCase) GetMeatByName(name string) (*model.Meat, error) {
@@ -115,20 +115,31 @@ func (mc *meatUseCase) DeleteMeat(id string) error {
 func (uc *meatUseCase) UpdateMeat(meat *model.Meat) error {
 	// Implement any business logic or validation before updating the meat
 	// You can also perform data manipulation or enrichment if needed
-	existingMeat, err := uc.meatRepository.GetMeatByName(meat.Name)
+	currentMeatValue, err := uc.meatRepository.GetMeatByID(meat.ID)
 	if err != nil {
-		log.WithField("error", err).Error("Failed to check meat name existence")
-		return fmt.Errorf("failed to check meat name existence: %v", err)
+		log.WithField("error", err).Error("Failed to get meat by ID")
+		return fmt.Errorf("failed to get meat by ID: %v", err)
 	}
-	if existingMeat != nil {
+	if currentMeatValue == nil {
+		log.WithField("meatID", meat.ID).Error("Meat not found")
+		return fmt.Errorf("meat not found")
+	}
+	existingMeat, _ := uc.meatRepository.GetMeatByName(meat.Name)
+	if existingMeat != nil && existingMeat.ID != meat.ID {
 		log.WithField("meatName", meat.Name).Error("Meat name already exists")
 		return fmt.Errorf("meat name already exists")
 	}
+	meat.CreatedBy = currentMeatValue.CreatedBy
+	meat.CreatedAt = currentMeatValue.CreatedAt
+	meat.Name = utils.NonEmpty(meat.Name, currentMeatValue.Name)
+	meat.Stock = utils.NonZero(meat.Stock, currentMeatValue.Stock)
+	meat.Price = utils.NonZero(meat.Price, currentMeatValue.Price)
+	meat.IsActive = currentMeatValue.IsActive
+	meat.UpdatedAt = time.Now()
 	err = uc.meatRepository.UpdateMeat(meat)
 	if err != nil {
 		log.WithField("error", err).Error("Failed to update meat")
 		return err
 	}
-
 	return nil
 }

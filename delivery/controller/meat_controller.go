@@ -164,5 +164,5 @@ func (uc *MeatController) UpdateMeat(ctx *gin.Context) {
 	}
 
 	logrus.Info("Meat updated successfully", meat)
-	ctx.JSON(http.StatusOK, gin.H{"message": "Meat updated successfully"})
+	utils.SendResponse(ctx, http.StatusOK, "Success", meat)
 }
