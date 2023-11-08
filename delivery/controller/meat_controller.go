@@ -131,8 +131,16 @@ func (uc *MeatController) DeleteMeat(c *gin.Context) {
 	meatID := c.Param("id")
 
 	if err := uc.meatUseCase.DeleteMeat(meatID); err != nil {
-		utils.SendResponse(c, http.StatusInternalServerError, "Failed to delete meat", nil)
-		return
+		if err == utils.ErrMeatNotFound {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusNotFound, "Meat not found", nil)
+			return
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, "Failed to delete meat", nil)
+			return
+
+		}
 	}
 
 	utils.SendResponse(c, http.StatusOK, "Success", nil)

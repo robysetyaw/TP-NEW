@@ -94,14 +94,14 @@ func (mc *meatUseCase) GetMeatById(id string) (*model.Meat, error) {
 
 func (mc *meatUseCase) DeleteMeat(id string) error {
 	// Implement any business logic or validation before deleting the meat
-	existingMeat, err := mc.meatRepository.GetMeatByName(id)
+	existingMeat, err := mc.meatRepository.GetMeatByID(id)
 	if err != nil {
 		log.WithField("error", err).Error("Failed to check meat name existence")
 		return fmt.Errorf("failed to check meat name existence: %v", err)
 	}
 	if existingMeat != nil {
-		log.WithField("meatName", id).Error("Meat name already exists")
-		return fmt.Errorf("meat name already exists")
+		log.WithField("meatName", id).Error("Meat name not found")
+		return utils.ErrMeatNotFound
 	}
 	err = mc.meatRepository.DeleteMeat(id)
 	if err != nil {
