@@ -34,7 +34,7 @@ func (uc *loginUseCase) Login(username, password string) (string, error) {
 		return "", fmt.Errorf("failed to retrieve user")
 	}
 	if condition := user == nil; condition {
-		logrus.Info("User not found", user)
+		logrus.Info("User not found", username)
 		return "", utils.ErrInvalidUsernamePassword
 	}
 
