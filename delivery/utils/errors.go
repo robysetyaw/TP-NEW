@@ -17,4 +17,5 @@ var (
 	ErrInvalidUsername         = errors.New("Invalid username")
 	ErrInvalidPassword         = errors.New("Invalid password")
 	ErrInvalidUsernamePassword = errors.New("Invalid username or password")
+	ErrCompanyNameAlreadyExist = errors.New("Company name already exists")
 )

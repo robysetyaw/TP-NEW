@@ -58,7 +58,7 @@ func (repo *companyRepository) GetCompanyByName(companyName string) (*model.Comp
 
 func (repo *companyRepository) GetAllCompany() ([]*model.Company, error) {
 	var companies []*model.Company
-	if err := repo.db.Find(&companies).Error; err != nil {
+	if err := repo.db.Where("is_active = ?", true).Order("created_at desc").Find(&companies).Error; err != nil {
 		return nil, err
 	}
 	return companies, nil

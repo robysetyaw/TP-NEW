@@ -47,8 +47,13 @@ func (cc *CompanyController) CreateCompany(c *gin.Context) {
 	company.IsActive = true
 
 	if err := cc.companyUseCase.CreateCompany(&company); err != nil {
-		utils.SendResponse(c, http.StatusInternalServerError, "Failed to create company", nil)
-		return
+		if err == utils.ErrCompanyNameAlreadyExist {
+			logrus.WithField("error", err).Error("Company name already exists")
+			utils.SendResponse(c, http.StatusConflict, "Company name already exists", nil)
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, "Failed to create company", nil)
+		}
 	}
 
 	utils.SendResponse(c, http.StatusOK, "Success create company", company)
@@ -59,69 +64,87 @@ func (cc *CompanyController) UpdateCompany(c *gin.Context) {
 
 	var company model.Company
 	if err := c.ShouldBindJSON(&company); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusBadRequest, "Bad request", nil)
 		return
 	}
 
-	token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+	userName, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusInternalServerError, "Invalid token", nil)
 		return
 	}
-
-	claims, err := utils.VerifyJWTToken(token)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-		return
-	}
-	userName := claims["username"].(string)
 	company.UpdatedBy = userName
 	company.ID = companyID
 
 	if err := cc.companyUseCase.UpdateCompany(&company); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update company"})
-		return
+		if err == utils.ErrCompanyNotFound {
+			logrus.WithField("error", err).Error("Company not found")
+			utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, "Failed to update company", nil)
+		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "update update data company",
-	})
+	utils.SendResponse(c, http.StatusOK, "Success update company", company)
 }
 
 func (cc *CompanyController) GetCompanyById(c *gin.Context) {
+	username,err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusInternalServerError, "Invalid token", nil)
+		return
+	}
 	companyId := c.Param("id")
-
+	logrus.Infof("[%s] is geting a company", username)
 	company, err := cc.companyUseCase.GetCompanyById(companyId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get company"})
+		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get company", nil)
 		return
 	}
 
 	if company == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "company not found"})
+		utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, company)
+	utils.SendResponse(c, http.StatusOK, "Success get all company", company)
 }
 
 func (cc *CompanyController) GetAllCompany(c *gin.Context) {
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusInternalServerError, "Invalid token", nil)
+		return
+	}
+	logrus.Infof("[%s] is geting a company", username)
 	companies, err := cc.companyUseCase.GetAllCompany()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get companies"})
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get company", nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, companies)
+	utils.SendResponse(c, http.StatusOK, "Success get company", companies)
 }
 
 func (cc *CompanyController) DeleteCompany(c *gin.Context) {
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusInternalServerError, "Invalid token", nil)
+		return
+	}
 	companyId := c.Param("id")
-
+	logrus.Infof("[%s] is deleting a company", username)
 	if err := cc.companyUseCase.DeleteCompany(companyId); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete company"})
+		utils.SendResponse(c, http.StatusInternalServerError, "Failed to delete company", nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Company deleted successfully"})
+	utils.SendResponse(c, http.StatusOK, "Success delete company", nil)
 }
