@@ -141,6 +141,7 @@ func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
 		} else {
 			logrus.Error(err)
 			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+			return
 		}
 
 	}
