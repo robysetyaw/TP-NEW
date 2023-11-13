@@ -104,6 +104,7 @@ func (cc *CompanyController) GetCompanyById(c *gin.Context) {
 
 	if err != nil {
 		if condition := err == utils.ErrCompanyNotFound; condition {
+			logrus.WithField("error", err).Error("Company not found")
 			utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
 			return
 		} else {
