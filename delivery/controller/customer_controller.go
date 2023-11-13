@@ -131,7 +131,12 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 
 func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
 
-	username := c.Param("username")
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		
+	}
 	logrus.Infof("[%s] is geting a customer", username)
 	customer_id := c.Param("id")
 	customers, err := cc.customerUsecase.GetCustomerById(customer_id)
