@@ -87,6 +87,7 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 		} else {
 			logrus.Error(err)
 			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+			return
 		}
 	}
 
@@ -118,6 +119,7 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 	if err != nil {
 		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		return
 	}
 
 	logrus.Infof("[%s] get all customer ", username)
@@ -159,6 +161,7 @@ func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 		} else {
 			logrus.Error(err)
 			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+			return
 		}
 	}
 
