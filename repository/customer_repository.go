@@ -60,7 +60,7 @@ func (repo *customerRepository) GetAllCustomer(page int, itemsPerPage int) ([]*m
 	}
 
 	var totalCount int64
-	if err := repo.db.Model(&model.Meat{}).Where("is_active = true").Count(&totalCount).Error; err != nil {
+	if err := repo.db.Model(&model.CustomerModel{}).Count(&totalCount).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -71,7 +71,7 @@ func (repo *customerRepository) GetAllCustomer(page int, itemsPerPage int) ([]*m
 	}
 
 	offset := (page - 1) * itemsPerPage
-	if err := repo.db.Where("is_active = ?", true).Offset(offset).Limit(itemsPerPage).
+	if err := repo.db.Offset(offset).Limit(itemsPerPage).
 		Order("created_at desc").Find(&customers).Error; err != nil {
 		return nil, 0, err
 	}
