@@ -40,7 +40,7 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 	}
 
 	userName, err := utils.GetUsernameFromContext(c)
-	logrus.Info("[%s] created customer %s ", userName, customer.FullName)
+	logrus.Infof("[%v] created customer %v ", userName, customer.FullName)
 	if err != nil {
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
@@ -57,7 +57,7 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 		return
 	}
 
-	logrus.Info("[%s] created succes create customer %s ", userName, customer.FullName)
+	logrus.Infof("[%s] created succes create customer %s ", userName, customer.FullName)
 	utils.SendResponse(c, http.StatusOK, "success insert data customer", customers)
 }
 
@@ -90,7 +90,7 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 		}
 	}
 
-	logrus.Info("[%s] updated succes update customer %s ", userName, customer.FullName)
+	logrus.Infof("[%s] updated succes update customer %s ", userName, customer.FullName)
 	utils.SendResponse(c, http.StatusOK, "success update data customer", customer)
 }
 
@@ -100,7 +100,7 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 	}
-	logrus.Info("[%s] get all customer ", username)
+	logrus.Infof("[%s] get all customer ", username)
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page <= 0 {
 		logrus.Error(err)
@@ -120,7 +120,7 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 	}
 
-	logrus.Info("[%s] get all customer ", username)
+	logrus.Infof("[%s] get all customer ", username)
 	utils.SendResponse(c, http.StatusOK, "success get all customer", map[string]interface{}{
 		"customers":  customers,
 		"totalPages": totalPages,
@@ -131,21 +131,36 @@ func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
 
 	username := c.Param("username")
 
-	expenditure, err := cc.customerUsecase.GetCustomerById(username)
+	customers, err := cc.customerUsecase.GetCustomerById(username)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if err == utils.ErrCustomerNotFound {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusNotFound, "Customer not found", nil)
+			return
+		}else{
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		
 	}
-	c.JSON(http.StatusOK, expenditure)
+	utils.SendResponse(c, http.StatusOK, "Success", customers)
 }
 
 func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 	customerId := c.Param("id")
 
 	if err := cc.customerUsecase.DeleteCustomer(customerId); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if err == utils.ErrCustomerNotFound {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusNotFound, "Customer not found", nil)
+			return
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "customer deleted successfully"})
+	utils.SendResponse(c, http.StatusOK, "Success", nil)
 }
 
 // func (cc *CustomerController) GetAllCustomerTransactions(c *gin.Context) {
