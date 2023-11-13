@@ -130,18 +130,19 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
 
 	username := c.Param("username")
-
-	customers, err := cc.customerUsecase.GetCustomerById(username)
+	logrus.Infof("[%s] is geting a customer", username)
+	customer_id := c.Param("id")
+	customers, err := cc.customerUsecase.GetCustomerById(customer_id)
 	if err != nil {
 		if err == utils.ErrCustomerNotFound {
 			logrus.Error(err)
 			utils.SendResponse(c, http.StatusNotFound, "Customer not found", nil)
 			return
-		}else{
+		} else {
 			logrus.Error(err)
 			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		}
-		
+
 	}
 	utils.SendResponse(c, http.StatusOK, "Success", customers)
 }
