@@ -55,7 +55,14 @@ func (uc *customerUsecase) UpdateCustomer(customer *model.CustomerModel) error {
 }
 
 func (uc *customerUsecase) GetCustomerById(id string) (*model.CustomerModel, error) {
-	return uc.customerRepo.GetCustomerById(id)
+	customer, err := uc.customerRepo.GetCustomerById(id)
+	if err != nil {
+		return nil, err
+	}
+	if customer == nil {
+		return nil, utils.ErrCustomerNotFound
+	}
+	return customer, nil
 }
 
 func (uc *customerUsecase) GetCustomerByName(name string) (*model.CustomerModel, error) {
@@ -72,5 +79,19 @@ func (uc *customerUsecase) GetAllCustomers(page int, itemsPerPage int) ([]*model
 }
 
 func (uc *customerUsecase) DeleteCustomer(id string) error {
-	return uc.customerRepo.DeleteCustomer(id)
+	customer, err := uc.GetCustomerById(id)
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	if customer == nil {
+		logrus.Error(utils.ErrCustomerNotFound)
+		return utils.ErrCustomerNotFound
+	}
+	err = uc.customerRepo.UpdateCustomer(customer)
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	return nil
 }
