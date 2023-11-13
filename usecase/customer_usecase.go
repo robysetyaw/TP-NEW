@@ -56,11 +56,11 @@ func (uc *customerUsecase) UpdateCustomer(customer *model.CustomerModel) error {
 
 func (uc *customerUsecase) GetCustomerById(id string) (*model.CustomerModel, error) {
 	customer, err := uc.customerRepo.GetCustomerById(id)
-	if err != nil {
-		return nil, err
-	}
 	if customer == nil {
 		return nil, utils.ErrCustomerNotFound
+	}
+	if err != nil {
+		return nil, err
 	}
 	return customer, nil
 }
