@@ -108,8 +108,8 @@ func (cc *CompanyController) GetCompanyById(c *gin.Context) {
 		} else {
 			logrus.Error(err)
 			utils.SendResponse(c, http.StatusInternalServerError, "Failed to get company", nil)
-
 		}
+		return
 	}
 	logrus.Info("Company found", company)
 	utils.SendResponse(c, http.StatusOK, "Success get company", company)
