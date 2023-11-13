@@ -18,4 +18,8 @@ var (
 	ErrInvalidPassword         = errors.New("Invalid password")
 	ErrInvalidUsernamePassword = errors.New("Invalid username or password")
 	ErrCompanyNameAlreadyExist = errors.New("Company name already exists")
+	ErrInvalidMeatName         = errors.New("Invalid meat name")
+	ErrInvalidAmount           = errors.New("Invalid amount")
+	ErrInvalidInvoiceNumber    = errors.New("Invalid invoice number")
+	ErrCreditPaymentNotFound   = errors.New("Credit payment not found")
 )
