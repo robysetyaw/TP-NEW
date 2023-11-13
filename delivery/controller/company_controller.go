@@ -92,7 +92,7 @@ func (cc *CompanyController) UpdateCompany(c *gin.Context) {
 }
 
 func (cc *CompanyController) GetCompanyById(c *gin.Context) {
-	username,err := utils.GetUsernameFromContext(c)
+	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
 		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Invalid token", nil)
@@ -101,17 +101,18 @@ func (cc *CompanyController) GetCompanyById(c *gin.Context) {
 	companyId := c.Param("id")
 	logrus.Infof("[%s] is geting a company", username)
 	company, err := cc.companyUseCase.GetCompanyById(companyId)
+
 	if err != nil {
-		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get company", nil)
-		return
+		if condition := err == utils.ErrCompanyNotFound; condition {
+			utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, "Failed to get company", nil)
+			
+		}
 	}
 
-	if company == nil {
-		utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
-		return
-	}
-
-	utils.SendResponse(c, http.StatusOK, "Success get all company", company)
+	utils.SendResponse(c, http.StatusOK, "Success get company", company)
 }
 
 func (cc *CompanyController) GetAllCompany(c *gin.Context) {
@@ -129,6 +130,7 @@ func (cc *CompanyController) GetAllCompany(c *gin.Context) {
 		return
 	}
 
+	logrus.Info("Company found", companies)
 	utils.SendResponse(c, http.StatusOK, "Success get company", companies)
 }
 
@@ -142,8 +144,13 @@ func (cc *CompanyController) DeleteCompany(c *gin.Context) {
 	companyId := c.Param("id")
 	logrus.Infof("[%s] is deleting a company", username)
 	if err := cc.companyUseCase.DeleteCompany(companyId); err != nil {
-		utils.SendResponse(c, http.StatusInternalServerError, "Failed to delete company", nil)
-		return
+		if err == utils.ErrCompanyNotFound {
+			utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
+			return
+		} else {
+			utils.SendResponse(c, http.StatusInternalServerError, "Failed to delete company", nil)
+			return
+		}
 	}
 
 	utils.SendResponse(c, http.StatusOK, "Success delete company", nil)

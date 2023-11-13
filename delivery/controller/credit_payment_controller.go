@@ -81,12 +81,15 @@ func (cc *CreditPaymentController) GetCreditPaymentByID(c *gin.Context) {
 
 	payment, err := cc.creditPaymentUseCase.GetCreditPaymentByID(id)
 	if err != nil {
-		// c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		utils.SendResponse(c, http.StatusNotFound, err.Error(), nil)
+		if err == utils.ErrCreditPaymentNotFound {
+			utils.SendResponse(c, http.StatusNotFound, "Credit payment not found", nil)
+		} else {
+			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		logrus.Error(err)
 		return
 	}
 
-	// c.JSON(http.StatusOK, payment)
 	utils.SendResponse(c, http.StatusOK, "Success get credit payment by ID", payment)
 }
 
@@ -95,7 +98,7 @@ func (cc *CreditPaymentController) UpdateCreditPayment(c *gin.Context) {
 
 	var payment model.CreditPayment
 	if err := c.ShouldBindJSON(&payment); err != nil {
-		// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		logrus.Error(err)
 		utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
@@ -104,12 +107,16 @@ func (cc *CreditPaymentController) UpdateCreditPayment(c *gin.Context) {
 
 	err := cc.creditPaymentUseCase.UpdateCreditPayment(&payment)
 	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		if err == utils.ErrCreditPaymentNotFound {
+			utils.SendResponse(c, http.StatusNotFound, "Credit payment not found", nil)
+		} else {
+			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		logrus.Error(err)
 		return
 	}
 
-	// c.JSON(http.StatusOK, gin.H{"message": "Credit payment updated successfully"})
+	logrus.Info("Credit payment updated successfully", payment)
 	utils.SendResponse(c, http.StatusOK, "Credit payment updated successfully", nil)
 }
 
@@ -125,8 +132,12 @@ func (cc *CreditPaymentController) GetCreditPaymentsByInvoiceNumber(c *gin.Conte
 
 	payments, err := cc.creditPaymentUseCase.GetCreditPaymentsByInvoiceNumber(invoice_number)
 	if err != nil {
+		if err == utils.ErrCreditPaymentNotFound {
+			utils.SendResponse(c, http.StatusNotFound, "Credit payment not found", nil)
+		} else {
+			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		}
 		logrus.Error(err)
-		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 

@@ -96,14 +96,15 @@ func (mc *meatUseCase) DeleteMeat(id string) error {
 	// Implement any business logic or validation before deleting the meat
 	existingMeat, err := mc.meatRepository.GetMeatByID(id)
 	if err != nil {
-		log.WithField("error", err).Error("Failed to check meat name existence")
+		log.WithField("error", err).Error("Failed to check meat existence")
 		return fmt.Errorf("failed to check meat name existence: %v", err)
 	}
 	if existingMeat != nil {
 		log.WithField("meatName", id).Error("Meat name not found")
 		return utils.ErrMeatNotFound
 	}
-	err = mc.meatRepository.DeleteMeat(id)
+	existingMeat.IsActive = false
+	err = mc.meatRepository.UpdateMeat(existingMeat)
 	if err != nil {
 		log.WithField("error", err).Error("Failed to delete meat")
 		return err
@@ -116,13 +117,13 @@ func (uc *meatUseCase) UpdateMeat(meat *model.Meat) error {
 	// Implement any business logic or validation before updating the meat
 	// You can also perform data manipulation or enrichment if needed
 	currentMeatValue, err := uc.meatRepository.GetMeatByID(meat.ID)
-	if err != nil {
-		log.WithField("error", err).Error("Failed to get meat by ID")
-		return fmt.Errorf("failed to get meat by ID: %v", err)
-	}
 	if currentMeatValue == nil {
 		log.WithField("meatID", meat.ID).Error("Meat not found")
 		return utils.ErrMeatNotFound
+	}
+	if err != nil {
+		log.WithField("error", err).Error("Failed to get meat by ID")
+		return fmt.Errorf("failed to get meat by ID: %v", err)
 	}
 	existingMeat, _ := uc.meatRepository.GetMeatByName(meat.Name)
 	if existingMeat != nil && existingMeat.ID != meat.ID {

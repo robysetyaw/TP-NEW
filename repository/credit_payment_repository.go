@@ -5,6 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"trackprosto/delivery/utils"
 	model "trackprosto/models"
 )
 
@@ -62,7 +63,11 @@ func (repo *creditPaymentRepository) GetTotalCredit(inv_number string) (float64,
 func (repo *creditPaymentRepository) GetCreditPaymentsByInvoiceNumber(inv_number string) ([]*model.CreditPayment, error) {
 	var payments []*model.CreditPayment
 	if err := repo.db.Where("inv_number = ?", inv_number).Order("created_at desc").Find(&payments).Error; err != nil {
-		return nil, err
+		if condition := err.Error(); condition == "record not found" {
+			return nil, utils.ErrCreditPaymentNotFound
+		} else {
+			return nil, fmt.Errorf("failed to get credit payments: %w", err)	
+		}
 	}
 	return payments, nil
 }

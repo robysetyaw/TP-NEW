@@ -30,11 +30,9 @@ func (uc *loginUseCase) Login(username, password string) (string, error) {
 	// Mengecek apakah pengguna dengan username tersebut ada di penyimpanan data
 	user, err := uc.userRepository.GetByUsername(username)
 	if err != nil {
-		logrus.Errorf("Failed to retrieve user: %v", err)
 		return "", fmt.Errorf("failed to retrieve user")
 	}
 	if condition := user == nil; condition {
-		logrus.Info("User not found %v", username)
 		return "", utils.ErrInvalidUsernamePassword
 	}
 

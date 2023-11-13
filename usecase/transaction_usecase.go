@@ -12,7 +12,7 @@ import (
 )
 
 type TransactionUseCase interface {
-	CreateTransaction(transaction *model.TransactionHeader) (*model.TransactionHeader, error)
+	CreateTransaction(transaction *model.TransactionHeader) (*model.TransactionHeaderResponse, error)
 	GetAllTransactions(page int, itemsPerPage int) ([]*model.TransactionHeader, int, error)
 	GetTransactionByID(id string) (*model.TransactionHeader, error)
 	DeleteTransaction(id string) error
@@ -28,7 +28,7 @@ type transactionUseCase struct {
 }
 
 // CreateTransaction implements TransactionUseCase.
-func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHeader) (*model.TransactionHeader, error) {
+func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHeader) (*model.TransactionHeaderResponse, error) {
 	// Generate invoice number
 	tx := uc.transactionRepo.GetDB().Begin()
 	defer tx.Rollback()
@@ -122,8 +122,10 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		}
 		detail.ID = uuid.NewString()
 		detail.MeatID = meat.ID
+		detail.MeatName = meat.Name
 		detail.TransactionID = transaction.ID
 		detail.IsActive = true
+		detail.CreatedBy = transaction.CreatedBy
 
 		if detail.Qty >= meat.Stock {
 			logrus.WithFields(logrus.Fields{
@@ -171,17 +173,6 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		transaction.Debt = newTotal - transaction.PaymentAmount
 	}
 
-	// uc.creditPaymentRepo.CreateCreditPayment(&model.CreditPayment{
-	// 	ID:            uuid.New().String(),
-	// 	InvoiceNumber: transaction.InvoiceNumber,
-	// 	Amount:        transaction.PaymentAmount,
-	// 	PaymentDate:   transaction.Date,
-	// 	CreatedAt:     transaction.CreatedAt,
-	// 	UpdatedAt:     transaction.CreatedAt,
-	// 	CreatedBy:     transaction.CreatedBy,
-	// 	UpdatedBy:     transaction.CreatedBy,
-	// })
-
 	// Create transaction header
 	result, err := uc.transactionRepo.CreateTransactionHeader(transaction)
 	if err != nil {
@@ -220,11 +211,34 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		})
 	}()
 
+	transactionResponse := &model.TransactionHeaderResponse{
+		ID:                 result.ID,
+		Date:               result.Date,
+		InvoiceNumber:      result.InvoiceNumber,
+		CustomerID:         result.CustomerID,
+		Name:               result.Name,
+		Address:            result.Address,
+		Company:            result.Company,
+		PhoneNumber:        result.PhoneNumber,
+		TxType:             result.TxType,
+		PaymentStatus:      result.PaymentStatus,
+		PaymentAmount:      result.PaymentAmount,
+		Total:              result.Total,
+		IsActive:           result.IsActive,
+		CreatedAt:          time.Time{},
+		UpdatedAt:          time.Time{},
+		CreatedBy:          result.CreatedBy,
+		UpdatedBy:          result.UpdatedBy,
+		Debt:               result.Debt,
+		TransactionDetails: transaction.TransactionDetails,
+	}
+
 	logrus.WithFields(logrus.Fields{
 		"invoice_number": transaction.InvoiceNumber,
 		"username":       transaction.CreatedBy,
 	}).Info("Transaction created successfully")
-	return result, nil
+
+	return transactionResponse, nil
 }
 
 func (uc *transactionUseCase) GetAllTransactions(page int, itemsPerPage int) ([]*model.TransactionHeader, int, error) {
@@ -246,6 +260,9 @@ func (uc *transactionUseCase) GetAllTransactions(page int, itemsPerPage int) ([]
 // notUse
 func (uc *transactionUseCase) GetTransactionByID(id string) (*model.TransactionHeader, error) {
 	transaction, err := uc.transactionRepo.GetTransactionByID(id)
+	if transaction == nil {
+		return nil, utils.ErrTransactionNotFound
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction: %w", err)
 	}
@@ -254,6 +271,14 @@ func (uc *transactionUseCase) GetTransactionByID(id string) (*model.TransactionH
 }
 
 func (uc *transactionUseCase) DeleteTransaction(id string) error {
+	transaction, err := uc.transactionRepo.GetTransactionByID(id)
+	if transaction == nil {
+		return utils.ErrTransactionNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("failed to get transaction: %w", err)
+	}
+
 	return uc.transactionRepo.DeleteTransaction(id)
 }
 
@@ -269,6 +294,9 @@ func (uc *transactionUseCase) UpdateTotalTransaction(transaction *model.Transact
 
 func (uc *transactionUseCase) GetTransactionByInvoiceNumber(inv_number string) (*model.TransactionHeader, error) {
 	transaction, err := uc.transactionRepo.GetByInvoiceNumber(inv_number)
+	if transaction == nil {
+		return nil, utils.ErrTransactionNotFound
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction: %w", err)
 	}

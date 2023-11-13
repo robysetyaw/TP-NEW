@@ -3,6 +3,7 @@ package usecase
 import (
 	"fmt"
 	"time"
+	"trackprosto/delivery/utils"
 	model "trackprosto/models"
 	"trackprosto/repository"
 )
@@ -74,25 +75,23 @@ func (uc *userUseCase) UpdateUser(user *model.User, username string) error {
 
 func (uc *userUseCase) GetUserByID(id string) (*model.User, error) {
 	user, err := uc.userRepository.GetUserByID(id)
+	if user == nil {
+		return nil, utils.ErrUserNotFound
+	}
 	if err != nil {
-		// Handle any repository errors or perform error logging
 		return nil, err
 	}
-
-	// Perform any additional data processing or transformation if needed
-
 	return user, nil
 }
 
 func (uc *userUseCase) GetUserByUsername(username string) (*model.User, error) {
 	user, err := uc.userRepository.GetByUsername(username)
+	if user == nil {
+		return nil, utils.ErrUserNotFound
+	}
 	if err != nil {
-		// Handle any repository errors or perform error logging
 		return nil, err
 	}
-
-	// Perform any additional data processing or transformation if needed
-
 	return user, nil
 }
 
@@ -103,23 +102,20 @@ func (uc *userUseCase) GetAllUsers() ([]*model.User, error) {
 		return nil, err
 	}
 
-	// Perform any additional data processing or transformation if needed
-
 	return users, nil
 }
 
 func (uc *userUseCase) DeleteUser(username string) error {
 	// Implement any business logic or validation before deleting the user
 	existingUser, err := uc.userRepository.GetByUsername(username)
+	if existingUser == nil {
+		return utils.ErrUserNotFound
+	}
 	if err != nil {
 		return fmt.Errorf("failed to check username existence: %v", err)
 	}
-	if existingUser == nil {
-		return fmt.Errorf("user Not Found")
-	}
 	err = uc.userRepository.DeleteUser(username)
 	if err != nil {
-		// Handle any repository errors or perform error logging
 		return err
 	}
 

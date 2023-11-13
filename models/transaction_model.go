@@ -58,3 +58,25 @@ func (TransactionHeader) TableName() string {
 func (TransactionDetail) TableName() string {
 	return "transaction_details"
 }
+
+type TransactionHeaderResponse struct {
+	ID                 string               `json:"-" gorm:"primaryKey" gorm:"tableName=transaction_headers"`
+	Date               string               `json:"date"`
+	InvoiceNumber      string               `json:"invoice_number" gorm:"column:inv_number"`
+	CustomerID         string               `json:"-"`
+	Name               string               `json:"name"`
+	Address            string               `json:"address"`
+	Company            string               `json:"company"`
+	PhoneNumber        string               `json:"phone_number"`
+	TxType             string               `json:"tx_type"`
+	PaymentStatus      string               `json:"payment_status"`
+	PaymentAmount      float64              `json:"payment_amount"`
+	Total              float64              `json:"total"`
+	IsActive           bool                 `json:"-"`
+	CreatedAt          time.Time            `json:"-" gorm:"autoCreateTime"`
+	UpdatedAt          time.Time            `json:"-" gorm:"autoUpdateTime"`
+	CreatedBy          string               `json:"-"`
+	UpdatedBy          string               `json:"-"`
+	Debt               float64              `json:"debt" gorm:"column:debt"`
+	TransactionDetails []*TransactionDetail `json:"transaction_details" gorm:"foreignKey:TransactionID"`
+}

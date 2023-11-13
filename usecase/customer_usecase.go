@@ -80,13 +80,13 @@ func (uc *customerUsecase) GetAllCustomers(page int, itemsPerPage int) ([]*model
 
 func (uc *customerUsecase) DeleteCustomer(id string) error {
 	customer, err := uc.GetCustomerById(id)
-	if err != nil {
-		logrus.Error(err)
-		return err
-	}
 	if customer == nil {
 		logrus.Error(utils.ErrCustomerNotFound)
 		return utils.ErrCustomerNotFound
+	}
+	if err != nil {
+		logrus.Error(err)
+		return err
 	}
 	err = uc.customerRepo.UpdateCustomer(customer)
 	if err != nil {

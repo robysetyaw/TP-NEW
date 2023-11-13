@@ -116,9 +116,6 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 func (uc *creditPaymentUseCase) GetCreditPayments() ([]*model.CreditPayment, error) {
 	payments, err := uc.creditPaymentRepo.GetAllCreditPayments()
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to get all credit payments")
 		return nil, err
 	}
 	return payments, nil
@@ -126,6 +123,9 @@ func (uc *creditPaymentUseCase) GetCreditPayments() ([]*model.CreditPayment, err
 
 func (uc *creditPaymentUseCase) GetCreditPaymentByID(id string) (*model.CreditPayment, error) {
 	payment, err := uc.creditPaymentRepo.GetCreditPaymentByID(id)
+	if payment == nil {
+		return nil, utils.ErrCreditPaymentNotFound
+	}
 	if err != nil {
 		return nil, err
 	}

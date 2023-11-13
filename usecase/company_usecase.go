@@ -27,7 +27,7 @@ func NewCompanyUseCase(companyRepo repository.CompanyRepository) CompanyUseCase 
 }
 
 func (cu *companyUseCase) CreateCompany(company *model.Company) error {
-	isExist,err := cu.companyRepo.GetCompanyByName(company.CompanyName)
+	isExist, err := cu.companyRepo.GetCompanyByName(company.CompanyName)
 	if err != nil {
 		logrus.Error(err)
 		return err
@@ -37,12 +37,20 @@ func (cu *companyUseCase) CreateCompany(company *model.Company) error {
 		return utils.ErrCompanyNameAlreadyExist
 	}
 	err = cu.companyRepo.CreateCompany(company)
-	return err 
+	return err
 }
 
 func (cu *companyUseCase) UpdateCompany(company *model.Company) error {
+	isExist, err := cu.companyRepo.GetCompanyByName(company.CompanyName)
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	if isExist != nil {
+		logrus.WithField("error", err).Error("Company name already exists")
+		return utils.ErrCompanyNameAlreadyExist
+	}
 	currentCompany, err := cu.companyRepo.GetCompanyById(company.ID)
-	
 	if err != nil {
 		logrus.Error(err)
 		return err
@@ -61,11 +69,22 @@ func (cu *companyUseCase) UpdateCompany(company *model.Company) error {
 	company.CreatedBy = currentCompany.CreatedBy
 
 	err = cu.companyRepo.UpdateCompany(company)
-	return err
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	return nil
 }
 
 func (cu *companyUseCase) GetCompanyById(id string) (*model.Company, error) {
-	return cu.companyRepo.GetCompanyById(id)
+	company, err := cu.companyRepo.GetCompanyById(id)
+	if company == nil {
+		return nil, utils.ErrCompanyNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return company, nil
 }
 
 func (cu *companyUseCase) GetAllCompany() ([]*model.Company, error) {
@@ -73,5 +92,18 @@ func (cu *companyUseCase) GetAllCompany() ([]*model.Company, error) {
 }
 
 func (cu *companyUseCase) DeleteCompany(id string) error {
-	return cu.companyRepo.DeleteCompany(id)
+	currentCompany, err := cu.companyRepo.GetCompanyById(id)
+	if currentCompany == nil {
+		return utils.ErrCompanyNotFound
+	}
+	if err != nil {
+		return err
+	}
+	currentCompany.IsActive = false
+	err = cu.companyRepo.UpdateCompany(currentCompany)
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	return nil
 }
