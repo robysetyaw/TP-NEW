@@ -15,15 +15,18 @@ type CustomerUsecase interface {
 	GetCustomerByName(name string) (*model.CustomerModel, error)
 	GetAllCustomers(page int, itemsPerPage int) ([]*model.CustomerModel, int, error)
 	DeleteCustomer(id string) error
+	GetAllCustomerByCompanyId(page int, itemsPerPage int, company_id string) ([]*model.CustomerModel, int, error)
 }
 
 type customerUsecase struct {
 	customerRepo repository.CustomerRepository
+	companyRepo  repository.CompanyRepository
 }
 
-func NewCustomerUsecase(cr repository.CustomerRepository) CustomerUsecase {
+func NewCustomerUsecase(cr repository.CustomerRepository, cpr repository.CompanyRepository) CustomerUsecase {
 	return &customerUsecase{
 		customerRepo: cr,
+		companyRepo:  cpr,
 	}
 }
 
@@ -94,4 +97,22 @@ func (uc *customerUsecase) DeleteCustomer(id string) error {
 		return err
 	}
 	return nil
+}
+
+func (uc *customerUsecase) GetAllCustomerByCompanyId(page int, itemsPerPage int, company_id string) ([]*model.CustomerModel, int, error) {
+	companies, err := uc.companyRepo.GetCompanyById(company_id)
+	if companies == nil {
+		return nil, 0, utils.ErrCompanyNotFound
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	customers, totalPages, err := uc.customerRepo.GetAllCustomerByCompanyId(page, itemsPerPage, company_id)
+	if customers == nil {
+		return nil, 0, utils.ErrCustomerNotFound
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	return customers, totalPages, nil
 }

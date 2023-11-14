@@ -28,6 +28,7 @@ func NewCustomerController(r *gin.Engine, customerUsecase usecase.CustomerUsecas
 	r.GET("/customers/:id", middleware.JWTAuthMiddleware(), controller.GetCustomerByID)
 	r.PUT("/customers/:id", middleware.JWTAuthMiddleware(), controller.UpdateCustomer)
 	r.DELETE("/customers/:id", middleware.JWTAuthMiddleware(), controller.DeleteCustomer)
+	r.GET("customers/company/:company_id", middleware.JWTAuthMiddleware(), controller.GetAllCustomerByCompanyId)
 	// r.GET("/customers/transaction/:username", middleware.JWTAuthMiddleware(), controller.GetAllCustomerTransactions)
 	return controller
 }
@@ -95,6 +96,51 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 	utils.SendResponse(c, http.StatusOK, "success update data customer", customer)
 }
 
+func (cc *CustomerController) GetAllCustomerByCompanyId(c *gin.Context) {
+	company_id := c.Param("company_id")
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+	}
+	logrus.Infof("[%s] get all customer ", username)
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page <= 0 {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid page number", nil)
+		return
+	}
+
+	itemsPerPage, err := strconv.Atoi(c.DefaultQuery("itemsPerPage", "10"))
+	if err != nil || itemsPerPage <= 0 {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid itemsPerPage", nil)
+		return
+	}
+	customers, totalPages, err := cc.customerUsecase.GetAllCustomerByCompanyId(page, itemsPerPage, company_id)
+	if err != nil {
+		if err == utils.ErrCustomerNotFound {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusNotFound, "Customer not found", nil)
+			return
+		} else if err == utils.ErrCompanyNotFound {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
+			return
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+			return
+		}
+	}
+
+	logrus.Infof("[%s] get all customer ", username)
+	utils.SendResponse(c, http.StatusOK, "success get all customer", map[string]interface{}{
+		"customers":  customers,
+		"totalPages": totalPages,
+	})
+}
+
 func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
@@ -123,7 +169,7 @@ func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 	}
 
 	logrus.Infof("[%s] get all customer ", username)
-	utils.SendResponse(c, http.StatusOK, "success get all customer", map[string]interface{}{
+	utils.SendResponse(c, http.StatusOK, "success get all customer by company_id", map[string]interface{}{
 		"customers":  customers,
 		"totalPages": totalPages,
 	})
@@ -135,7 +181,7 @@ func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
 	if err != nil {
 		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
-		
+
 	}
 	logrus.Infof("[%s] is geting a customer", username)
 	customer_id := c.Param("id")

@@ -13,6 +13,7 @@ type CustomerRepository interface {
 	GetCustomerByName(string) (*model.CustomerModel, error)
 	GetAllCustomer(page int, itemsPerPage int) ([]*model.CustomerModel, int, error)
 	DeleteCustomer(string) error
+	GetAllCustomerByCompanyId(page int, itemsPerPage int, company_id string) ([]*model.CustomerModel, int, error)
 }
 
 type customerRepository struct {
@@ -72,6 +73,31 @@ func (repo *customerRepository) GetAllCustomer(page int, itemsPerPage int) ([]*m
 
 	offset := (page - 1) * itemsPerPage
 	if err := repo.db.Offset(offset).Limit(itemsPerPage).
+		Order("created_at desc").Find(&customers).Error; err != nil {
+		return nil, 0, err
+	}
+	return customers, totalPages, nil
+}
+
+func (repo *customerRepository) GetAllCustomerByCompanyId(page int, itemsPerPage int, company_id string) ([]*model.CustomerModel, int, error) {
+	var customers []*model.CustomerModel
+	if page < 1 {
+		page = 1
+	}
+
+	var totalCount int64
+	if err := repo.db.Model(&model.CustomerModel{}).Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	totalPages := int((totalCount + int64(itemsPerPage) - 1) / int64(itemsPerPage))
+
+	if page > totalPages {
+		page = totalPages
+	}
+
+	offset := (page - 1) * itemsPerPage
+	if err := repo.db.Where("company_id = ?", company_id).Offset(offset).Limit(itemsPerPage).
 		Order("created_at desc").Find(&customers).Error; err != nil {
 		return nil, 0, err
 	}

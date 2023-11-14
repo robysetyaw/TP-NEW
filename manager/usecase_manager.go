@@ -43,7 +43,7 @@ func (um *usecaseManager) GetCompanyUsecase() usecase.CompanyUseCase {
 
 func (um *usecaseManager) GetCustomerUsecase() usecase.CustomerUsecase {
 	onceLoadCustomerUseCase.Do(func() {
-		um.customerUsecase = usecase.NewCustomerUsecase(um.repoManager.GetCustomerRepo())
+		um.customerUsecase = usecase.NewCustomerUsecase(um.repoManager.GetCustomerRepo(), um.repoManager.GetCompanyRepo())
 	})
 	return um.customerUsecase
 }
