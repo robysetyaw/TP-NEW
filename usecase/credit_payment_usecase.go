@@ -145,6 +145,9 @@ func (uc *creditPaymentUseCase) UpdateCreditPayment(payment *model.CreditPayment
 
 func (uc *creditPaymentUseCase) GetCreditPaymentsByInvoiceNumber(inv_number string) ([]*model.CreditPayment, error) {
 	payments, err := uc.creditPaymentRepo.GetCreditPaymentsByInvoiceNumber(inv_number)
+	if len(payments) == 0 {
+		return nil, utils.ErrCreditPaymentNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
