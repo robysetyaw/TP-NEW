@@ -5,6 +5,7 @@ import (
 	"trackprosto/delivery/middleware"
 	"trackprosto/delivery/utils"
 	model "trackprosto/models"
+	"trackprosto/models/dto"
 	"trackprosto/usecase"
 
 	"github.com/gin-gonic/gin"
@@ -62,33 +63,40 @@ func (cc *CompanyController) CreateCompany(c *gin.Context) {
 func (cc *CompanyController) UpdateCompany(c *gin.Context) {
 	companyID := c.Param("id")
 
-	var company model.Company
-	if err := c.ShouldBindJSON(&company); err != nil {
+	var CompanyRequest dto.CompanyRequest
+	if err := c.ShouldBindJSON(&CompanyRequest); err != nil {
 		logrus.Error(err)
 		utils.SendResponse(c, http.StatusBadRequest, "Bad request", nil)
 		return
 	}
-
 	userName, err := utils.GetUsernameFromContext(c)
 	if err != nil {
 		logrus.Error(err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Invalid token", nil)
 		return
 	}
-	company.UpdatedBy = userName
-	company.ID = companyID
 
-	if err := cc.companyUseCase.UpdateCompany(&company); err != nil {
+	CompanyRequest.UpdatedBy = userName
+	CompanyRequest.ID = companyID
+
+	companyResponse, err := cc.companyUseCase.UpdateCompany(&CompanyRequest)
+	if err != nil{
 		if err == utils.ErrCompanyNotFound {
 			logrus.WithField("error", err).Error("Company not found")
 			utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
+			return
+		} else if err == utils.ErrCompanyNameAlreadyExist {
+			logrus.WithField("error", err).Error("Company name already exists")
+			utils.SendResponse(c, http.StatusConflict, "Company name already exists", nil)
+			return
 		} else {
 			logrus.Error(err)
 			utils.SendResponse(c, http.StatusInternalServerError, "Failed to update company", nil)
+			return
 		}
 	}
 
-	utils.SendResponse(c, http.StatusOK, "Success update company", company)
+	utils.SendResponse(c, http.StatusOK, "Success update company", companyResponse)
 }
 
 func (cc *CompanyController) GetCompanyById(c *gin.Context) {

@@ -3,6 +3,7 @@ package usecase
 import (
 	"trackprosto/delivery/utils"
 	model "trackprosto/models"
+	"trackprosto/models/dto"
 	"trackprosto/repository"
 
 	"github.com/sirupsen/logrus"
@@ -10,7 +11,7 @@ import (
 
 type CompanyUseCase interface {
 	CreateCompany(*model.Company) error
-	UpdateCompany(*model.Company) error
+	UpdateCompany(*dto.CompanyRequest) (*dto.CompanyResponse, error)
 	GetCompanyById(string) (*model.Company, error)
 	GetAllCompany() ([]*model.Company, error)
 	DeleteCompany(string) error
@@ -40,40 +41,43 @@ func (cu *companyUseCase) CreateCompany(company *model.Company) error {
 	return err
 }
 
-func (cu *companyUseCase) UpdateCompany(company *model.Company) error {
-	isExist, err := cu.companyRepo.GetCompanyByName(company.CompanyName)
+func (cu *companyUseCase) UpdateCompany(companyRequest *dto.CompanyRequest) (*dto.CompanyResponse, error) {
+	currentCompany, err := cu.companyRepo.GetCompanyById(companyRequest.ID)
 	if err != nil {
 		logrus.Error(err)
-		return err
-	}
-	if isExist != nil {
-		logrus.WithField("error", err).Error("Company name already exists")
-		return utils.ErrCompanyNameAlreadyExist
-	}
-	currentCompany, err := cu.companyRepo.GetCompanyById(company.ID)
-	if err != nil {
-		logrus.Error(err)
-		return err
+		return nil, err
 	}
 	if currentCompany == nil {
-		logrus.WithField("error", err).Error("Failed to get company by ID")
-		return utils.ErrCompanyNotFound
+		return nil, utils.ErrCompanyNotFound
+	}
+	if companyRequest.CompanyName != "" {
+		isExist, err := cu.companyRepo.GetCompanyByName(companyRequest.CompanyName)
+		if err != nil {
+			return nil, err
+		}
+		if isExist != nil {
+			return nil, utils.ErrCompanyNameAlreadyExist
+		}
 	}
 
-	company.Address = utils.NonEmpty(company.Address, currentCompany.Address)
-	company.CompanyName = utils.NonEmpty(company.CompanyName, currentCompany.CompanyName)
-	company.Email = utils.NonEmpty(company.Email, currentCompany.Email)
-	company.PhoneNumber = utils.NonEmpty(company.PhoneNumber, currentCompany.PhoneNumber)
-	company.IsActive = currentCompany.IsActive
-	company.CreatedAt = currentCompany.CreatedAt
-	company.CreatedBy = currentCompany.CreatedBy
-
-	err = cu.companyRepo.UpdateCompany(company)
+	currentCompany.Address = utils.NonEmpty(companyRequest.Address, currentCompany.Address)
+	currentCompany.CompanyName = utils.NonEmpty(companyRequest.CompanyName, currentCompany.CompanyName)
+	currentCompany.Email = utils.NonEmpty(companyRequest.Email, currentCompany.Email)
+	currentCompany.PhoneNumber = utils.NonEmpty(companyRequest.PhoneNumber, currentCompany.PhoneNumber)
+	err = cu.companyRepo.UpdateCompany(currentCompany)
 	if err != nil {
-		logrus.Error(err)
-		return err
+		return nil, err
 	}
-	return nil
+
+	companyResponse := &dto.CompanyResponse{
+		ID:          currentCompany.ID,
+		CompanyName: currentCompany.CompanyName,
+		Address:     currentCompany.Address,
+		Email:       currentCompany.Email,
+		PhoneNumber: currentCompany.PhoneNumber,
+	}
+
+	return companyResponse, nil
 }
 
 func (cu *companyUseCase) GetCompanyById(id string) (*model.Company, error) {
