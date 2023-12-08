@@ -21,7 +21,7 @@ type TransactionRepository interface {
 	GetTransactionByRangeDateWithTxType(startDate time.Time, endDate time.Time, tx_type string) ([]*model.TransactionHeader, error)
 	GetTransactionByRangeDateWithTxTypeAndPaid(startDate time.Time, endDate time.Time, tx_type, payment_status string) ([]*model.TransactionHeader, error)
 	GetTransactionsByDateAndType(startDate time.Time, endDate time.Time, txType string) ([]*model.TransactionHeader, error)
-	GetAllTransactionsByCustomerUsername(customer_id string) ([]*model.TransactionHeader, error)
+	GetAllTransactionsByCustomerId(customer_id string) ([]*model.TransactionHeader, error)
 	getCustomerDebt(customer_id string) (float64, error)
 	getTransactionDebt(id string) (float64, error)
 	CalculateMeatStockByDate(meatID string, startDate string) (stockIn float64, stockOut float64, err error)
@@ -74,11 +74,6 @@ func (repo *transactionRepository) calculateMeatStockByType(meatID string, start
 	return totalQty, nil
 }
 
-// GetAllTransactionsByCustomerUsername implements TransactionRepository.
-func (*transactionRepository) GetAllTransactionsByCustomerUsername(customer_id string) ([]*model.TransactionHeader, error) {
-	panic("unimplemented")
-}
-
 // getCustomerDebt implements TransactionRepository.
 func (*transactionRepository) getCustomerDebt(customer_id string) (float64, error) {
 	panic("unimplemented")
@@ -88,6 +83,19 @@ func NewTransactionRepository(db *gorm.DB) TransactionRepository {
 	return &transactionRepository{
 		db: db,
 	}
+}
+
+// GetAllTransactionsByCustomerUsername implements TransactionRepository.
+func (repo *transactionRepository) GetAllTransactionsByCustomerId(customer_id string) ([]*model.TransactionHeader, error) {
+	var transactions []*model.TransactionHeader
+
+	err := repo.db.Preload("TransactionDetails").Where("customer_id = ? AND is_active = true", customer_id).
+		Order("created_at desc").Find(&transactions).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return transactions, nil
 }
 
 func (repo *transactionRepository) CreateTransactionHeader(header *model.TransactionHeader) (*model.TransactionHeader, error) {
@@ -145,7 +153,6 @@ func (repo *transactionRepository) GetAllTransactions(page int, itemsPerPage int
 
 	return transactions, totalPages, nil
 }
-
 
 func (repo *transactionRepository) DeleteTransaction(id string) error {
 	transaction := model.TransactionHeader{ID: id}

@@ -16,20 +16,43 @@ type CustomerUsecase interface {
 	GetAllCustomers(page int, itemsPerPage int) ([]*model.CustomerModel, int, error)
 	DeleteCustomer(id string) error
 	GetAllCustomerByCompanyId(page int, itemsPerPage int, company_id string) ([]*model.CustomerModel, int, error)
+	GetAllTransactionsByCustomerId(customer_id string) ([]*model.TransactionHeader, error)
 }
 
 type customerUsecase struct {
-	customerRepo repository.CustomerRepository
-	companyRepo  repository.CompanyRepository
+	customerRepo    repository.CustomerRepository
+	companyRepo     repository.CompanyRepository
+	transactionRepo repository.TransactionRepository
 }
 
-func NewCustomerUsecase(cr repository.CustomerRepository, cpr repository.CompanyRepository) CustomerUsecase {
+
+
+func NewCustomerUsecase(cr repository.CustomerRepository, cpr repository.CompanyRepository, txr repository.TransactionRepository) CustomerUsecase {
 	return &customerUsecase{
-		customerRepo: cr,
-		companyRepo:  cpr,
+		customerRepo:    cr,
+		companyRepo:     cpr,
+		transactionRepo: txr,
 	}
 }
 
+// GetAllTransactionsByCustomerId implements CustomerUsecase.
+func (uc *customerUsecase) GetAllTransactionsByCustomerId(customer_id string) ([]*model.TransactionHeader, error) {
+	custExist , err := uc.customerRepo.GetCustomerById(customer_id);
+	if custExist == nil {
+		return nil, utils.ErrCustomerNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	cust_transactions, err := uc.transactionRepo.GetAllTransactionsByCustomerId(customer_id);
+	if err != nil {
+		return nil, err
+	}
+	if cust_transactions == nil {
+		return nil, utils.ErrTransactionNotFound
+	}
+	return cust_transactions, nil
+}
 func (uc *customerUsecase) CreateCustomer(customer *model.CustomerModel) (*model.CustomerModel, error) {
 	customer, err := uc.customerRepo.CreateCustomer(customer)
 	if err != nil {

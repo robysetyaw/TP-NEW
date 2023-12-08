@@ -29,7 +29,7 @@ func NewCustomerController(r *gin.Engine, customerUsecase usecase.CustomerUsecas
 	r.PUT("/customers/:id", middleware.JWTAuthMiddleware(), controller.UpdateCustomer)
 	r.DELETE("/customers/:id", middleware.JWTAuthMiddleware(), controller.DeleteCustomer)
 	r.GET("customers/company/:company_id", middleware.JWTAuthMiddleware(), controller.GetAllCustomerByCompanyId)
-	// r.GET("/customers/transaction/:username", middleware.JWTAuthMiddleware(), controller.GetAllCustomerTransactions)
+	r.GET("/customers/transaction/:id", middleware.JWTAuthMiddleware(), controller.GetAllTransactionsByCustomerId)
 	return controller
 }
 
@@ -219,24 +219,33 @@ func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 	utils.SendResponse(c, http.StatusOK, "Success", nil)
 }
 
-// func (cc *CustomerController) GetAllCustomerTransactions(c *gin.Context) {
-// 	userName := c.Param("username")
-// 	customerTransactions, err := cc.customerUsecase.GetAllCustomerTransactions(userName)
-// 	if err != nil {
-// 		appError := apperror.AppError{}
-// 		if errors.As(err, &appError) {
-// 			fmt.Printf(" cc.customerUsecase.GetAllCustomers() : %v ", err.Error())
-// 			c.JSON(http.StatusBadGateway, gin.H{
-// 				"errorMessage": appError.Error(),
-// 			})
-// 		} else {
-// 			fmt.Printf("ServiceHandler.InsertService() 2 : %v ", err.Error())
-// 			c.JSON(http.StatusInternalServerError, gin.H{
-// 				"errorMessage": "failed to get customers",
-// 			})
-// 		}
-// 		return
-// 	}
+func (cc *CustomerController) GetAllTransactionsByCustomerId(c *gin.Context) {
+	customerId := c.Param("id")
 
-// 	c.JSON(http.StatusOK, customerTransactions)
-// }
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+	}
+	logrus.Infof("[%s] get all transaction by customer id", username)
+
+	customerTransactions, err := cc.customerUsecase.GetAllTransactionsByCustomerId(customerId)
+	if err != nil {
+		if err == utils.ErrCustomerNotFound {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusNotFound, "Customer not found", nil)
+			return
+		} else if err == utils.ErrTransactionNotFound {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusOK, "No Transactions Found", nil)
+			return
+		} else {
+			logrus.Error(err)
+			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+			return
+		}
+	}
+
+	utils.SendResponse(c, http.StatusOK, "Success", customerTransactions)
+
+}
