@@ -31,7 +31,6 @@ func NewUserController(r *gin.Engine, userUC usecase.UserUseCase) {
 func (uc *UserController) CreateUser(c *gin.Context) {
 	var user model.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		utils.SendResponse(c, http.StatusBadRequest, "Bad request", nil)
 		return
 	}
@@ -39,14 +38,12 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	user.ID = uuid.New().String()
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encrypt password"})
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to encrypt password", nil)
 		return
 	}
 
 	user.Password = string(hashedPassword)
 
-	// if err := uc.userUseCase.CreateUser(&user);
 	err = uc.userUseCase.CreateUser(&user)
 	if err != nil {
 		if err.Error() == "username already exists" {
@@ -57,7 +54,6 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	// c.JSON(http.StatusOK, user)
 	utils.SendResponse(c, http.StatusOK, "Success", user)
 }
 
@@ -66,7 +62,6 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 
 	var user model.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		// c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		utils.SendResponse(c, http.StatusBadRequest, "Bad request", nil)
 		return
 	}
@@ -74,21 +69,18 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 
 	token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
 	if err != nil {
-		// c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header"})
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid authorization header", nil)
 		return
 	}
 
 	claims, err := utils.VerifyJWTToken(token)
 	if err != nil {
-		// c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
 	userName := claims["username"].(string)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encrypt password"})
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to encrypt password", nil)
 		return
 	}
@@ -96,12 +88,10 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 	user.Password = string(hashedPassword)
 	user.IsActive = true
 	if err := uc.userUseCase.UpdateUser(&user, userName); err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
-	// c.JSON(http.StatusOK, user)
 	utils.SendResponse(c, http.StatusOK, "Success", user)
 }
 
@@ -110,17 +100,14 @@ func (uc *UserController) GetUserByID(c *gin.Context) {
 
 	user, err := uc.userUseCase.GetUserByID(userID)
 	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get user", nil)
 		return
 	}
 	if user == nil {
-		// c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		utils.SendResponse(c, http.StatusNotFound, "User not found", nil)
 		return
 	}
 
-	// c.JSON(http.StatusOK, user)
 	utils.SendResponse(c, http.StatusOK, "Success", user)
 }
 
@@ -129,17 +116,14 @@ func (uc *UserController) GetUserByUsername(c *gin.Context) {
 
 	user, err := uc.userUseCase.GetUserByUsername(username)
 	if err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get user", nil)
 		return
 	}
 	if user == nil {
-		// c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		utils.SendResponse(c, http.StatusNotFound, "User not found", nil)
 		return
 	}
 
-	// c.JSON(http.StatusOK, user)
 	utils.SendResponse(c, http.StatusOK, "Success", user)
 }
 
@@ -149,8 +133,6 @@ func (uc *UserController) GetAllUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get users"})
 		return
 	}
-
-	// c.JSON(http.StatusOK, users)
 	utils.SendResponse(c, http.StatusOK, "Success", users)
 }
 
@@ -158,11 +140,9 @@ func (uc *UserController) DeleteUser(c *gin.Context) {
 	username := c.Param("username")
 
 	if err := uc.userUseCase.DeleteUser(username); err != nil {
-		// c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to delete user", nil)
 		return
 	}
 
-	// c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 	utils.SendResponse(c, http.StatusOK, "Success", nil)
 }
