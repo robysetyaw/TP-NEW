@@ -61,8 +61,8 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 
 	// Check if customer data is available before proceeding
 	if customer == nil {
-		logrus.Error("Customer data is not available")
-		return nil, fmt.Errorf("customer data not found")
+		logrus.Error(utils.ErrCustomerNotFound)
+		return nil, utils.ErrCustomerNotFound
 	}
 
 	// Using goroutine to retrieve company data
@@ -84,8 +84,8 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 
 	// Check if company data is available before proceeding
 	if company == nil {
-		logrus.Error("Company data is not available")
-		return nil, fmt.Errorf("company data not found")
+		logrus.Error(utils.ErrCompanyNotFound)
+		return nil, utils.ErrCompanyNotFound
 	}
 
 	invoiceNumberFormat := "MJP-%s-%04d"
@@ -118,7 +118,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 			logrus.WithFields(logrus.Fields{
 				"meat_name": detail.MeatName,
 			}).Error("Meat not found by name")
-			return nil, fmt.Errorf("meat name %s not found", detail.MeatName)
+			return nil, utils.ErrMeatNotFound
 		}
 		detail.ID = uuid.NewString()
 		detail.MeatID = meat.ID

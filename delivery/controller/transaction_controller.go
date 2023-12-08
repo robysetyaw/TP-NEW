@@ -46,16 +46,28 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 		utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
+	if request.TxType == "" {
+		utils.SendResponse(c, http.StatusBadRequest, "TxType is required", nil)
+		return
+	} else if request.TxType != "in" && request.TxType != "out" {
+		utils.SendResponse(c, http.StatusBadRequest, "TxType must be in or out", nil)
+		return
 
+	}
 	request.CreatedBy = userName
 	transaction, err := tc.transactionUseCase.CreateTransaction(&request)
 	if err != nil {
 		logrus.Error(err)
 		if err == utils.ErrAmountGreaterThanTotal {
-			logrus.Error(err)
 			utils.SendResponse(c, http.StatusBadRequest, utils.ErrAmountGreaterThanTotal.Error(), nil)
+		} else if err == utils.ErrCustomerNotFound {
+			utils.SendResponse(c, http.StatusNotFound, utils.ErrCustomerNotFound.Error(), nil)
+
+		} else if err == utils.ErrCompanyNotFound {
+			utils.SendResponse(c, http.StatusNotFound, utils.ErrCompanyNotFound.Error(), nil)
+		} else if err == utils.ErrMeatNotFound {
+			utils.SendResponse(c, http.StatusNotFound, utils.ErrMeatNotFound.Error(), nil)
 		} else {
-			logrus.Error(err)
 			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return

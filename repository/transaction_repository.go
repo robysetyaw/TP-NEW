@@ -188,14 +188,13 @@ func (repo *transactionRepository) UpdateStatusInvoicePaid(id string) error {
 
 func (repo *transactionRepository) UpdateCustomerDebt(id string, additionalDebt float64) error {
 	var customer model.CustomerModel
-	// Mengambil data pelanggan berdasarkan ID
+
 	if err := repo.db.Where("id = ?", id).First(&customer).Error; err != nil {
 		return err
 	}
-	// Mengambil total utang saat ini
+
 	currentDebt := customer.Debt
 
-	// Menambahkan utang tambahan
 	newDebt := currentDebt + additionalDebt
 	if err := repo.db.Model(&customer).Update("debt", newDebt).Error; err != nil {
 		return err
