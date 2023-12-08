@@ -231,16 +231,14 @@ func (cc *CustomerController) GetAllTransactionsByCustomerId(c *gin.Context) {
 
 	customerTransactions, err := cc.customerUsecase.GetAllTransactionsByCustomerId(customerId)
 	if err != nil {
+		logrus.Error(err)
 		if err == utils.ErrCustomerNotFound {
-			logrus.Error(err)
 			utils.SendResponse(c, http.StatusNotFound, "Customer not found", nil)
 			return
 		} else if err == utils.ErrTransactionNotFound {
-			logrus.Error(err)
 			utils.SendResponse(c, http.StatusOK, "No Transactions Found", nil)
 			return
 		} else {
-			logrus.Error(err)
 			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 			return
 		}
