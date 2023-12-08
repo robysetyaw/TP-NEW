@@ -81,12 +81,11 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 	customer.Id = customerID
 
 	if err := cc.customerUsecase.UpdateCustomer(&customer); err != nil {
-		if err == utils.ErrCustomerNotFound {
-			logrus.Error(err)
+		logrus.Error(err)
+		if err == utils.ErrCustomerNotFound {			
 			utils.SendResponse(c, http.StatusNotFound, "Customer not found", nil)
 			return
 		} else {
-			logrus.Error(err)
 			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 			return
 		}
@@ -119,16 +118,14 @@ func (cc *CustomerController) GetAllCustomerByCompanyId(c *gin.Context) {
 	}
 	customers, totalPages, err := cc.customerUsecase.GetAllCustomerByCompanyId(page, itemsPerPage, company_id)
 	if err != nil {
+		logrus.Error(err)
 		if err == utils.ErrCustomerNotFound {
-			logrus.Error(err)
 			utils.SendResponse(c, http.StatusNotFound, "Customer not found", nil)
 			return
 		} else if err == utils.ErrCompanyNotFound {
-			logrus.Error(err)
 			utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
 			return
 		} else {
-			logrus.Error(err)
 			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 			return
 		}
@@ -231,12 +228,10 @@ func (cc *CustomerController) GetAllTransactionsByCustomerId(c *gin.Context) {
 
 	customerTransactions, err := cc.customerUsecase.GetAllTransactionsByCustomerId(customerId)
 	if err != nil {
+		
 		logrus.Error(err)
 		if err == utils.ErrCustomerNotFound {
 			utils.SendResponse(c, http.StatusNotFound, "Customer not found", nil)
-			return
-		} else if err == utils.ErrTransactionNotFound {
-			utils.SendResponse(c, http.StatusOK, "No Transactions Found", nil)
 			return
 		} else {
 			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)

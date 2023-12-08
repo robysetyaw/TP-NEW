@@ -22,4 +22,6 @@ var (
 	ErrInvalidAmount           = errors.New("Invalid amount")
 	ErrInvalidInvoiceNumber    = errors.New("Invalid invoice number")
 	ErrCreditPaymentNotFound   = errors.New("Credit payment not found")
+	ErrInsufficientMeatStock   = errors.New("Insufficient meat stock")
+	ErrMeatStockNotEnough      = errors.New("Meat stock not enough")
 )

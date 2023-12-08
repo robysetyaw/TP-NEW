@@ -36,13 +36,8 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	todayDate := time.Now().Format("2006-01-02")
 	number, err := uc.transactionRepo.CountTransactions()
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-		}).Error("Failed to count transactions")
 		return nil, err
 	}
-
-	// Using goroutine to retrieve customer data
 	customerCh := make(chan *model.CustomerModel, 1)
 	go func() {
 		customer, err := uc.customerRepo.GetCustomerById(transaction.CustomerID)
@@ -55,8 +50,6 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		}
 		customerCh <- customer
 	}()
-
-	// Retrieve customer data
 	customer := <-customerCh
 
 	// Check if customer data is available before proceeding
@@ -108,16 +101,9 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	for _, detail := range transaction.TransactionDetails {
 		meat, err := uc.meatRepo.GetMeatByID(detail.MeatID)
 		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"error":     err,
-				"meat_name": detail.MeatName,
-			}).Error("Failed to get meat by id")
 			return nil, err
 		}
 		if meat == nil {
-			logrus.WithFields(logrus.Fields{
-				"meat_name": detail.MeatName,
-			}).Error("Meat not found by name")
 			return nil, utils.ErrMeatNotFound
 		}
 		detail.ID = uuid.NewString()
@@ -128,10 +114,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		detail.CreatedBy = transaction.CreatedBy
 
 		if detail.Qty >= meat.Stock {
-			logrus.WithFields(logrus.Fields{
-				"meat_name": detail.MeatName,
-			}).Error("Insufficient stock for meat")
-			return nil, fmt.Errorf("insufficient stock for %s", detail.MeatName)
+			return nil, utils.ErrMeatStockNotEnough
 		}
 
 		if transaction.TxType == "in" {
@@ -232,11 +215,6 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		Debt:               result.Debt,
 		TransactionDetails: transaction.TransactionDetails,
 	}
-
-	logrus.WithFields(logrus.Fields{
-		"invoice_number": transaction.InvoiceNumber,
-		"username":       transaction.CreatedBy,
-	}).Info("Transaction created successfully")
 
 	return transactionResponse, nil
 }
