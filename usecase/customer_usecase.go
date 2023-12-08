@@ -54,9 +54,14 @@ func (uc *customerUsecase) GetAllTransactionsByCustomerId(customer_id string) ([
 	return cust_transactions, nil
 }
 func (uc *customerUsecase) CreateCustomer(customer *model.CustomerModel) (*model.CustomerModel, error) {
-	customer, err := uc.customerRepo.CreateCustomer(customer)
+	
+	companyExist, err := uc.companyRepo.GetCompanyById(customer.CompanyId)
+	if companyExist == nil {
+		return nil, utils.ErrCompanyNotFound
+	}
+	
+	customer, err = uc.customerRepo.CreateCustomer(customer)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return customer, nil

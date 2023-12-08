@@ -1,6 +1,12 @@
 package utils
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+)
 
 var (
 	ErrInvoiceNumberNotExist   = errors.New("Invoice number does not exist")
@@ -24,5 +30,57 @@ var (
 	ErrCreditPaymentNotFound   = errors.New("Credit payment not found")
 	ErrInsufficientMeatStock   = errors.New("Insufficient meat stock")
 	ErrMeatStockNotEnough      = errors.New("Meat stock not enough")
-	ErrInvalidPrice             = errors.New("Invalid price")
+	ErrInvalidPrice            = errors.New("Invalid price")
 )
+
+func HandleError(c *gin.Context, err error) {
+	switch err {
+	case ErrInvoiceNumberNotExist:
+		SendResponse(c, http.StatusNotFound, err.Error(), nil)
+	case ErrInvoiceAlreadyPaid:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrAmountGreaterThanTotal:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrMeatNameAlreadyExist:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrMeatNotFound:
+		SendResponse(c, http.StatusNotFound, err.Error(), nil)
+	case ErrCustomerNotFound:
+		SendResponse(c, http.StatusNotFound, err.Error(), nil)
+	case ErrCompanyNotFound:
+		SendResponse(c, http.StatusNotFound, err.Error(), nil)
+	case ErrUserNotFound:
+		SendResponse(c, http.StatusNotFound, err.Error(), nil)
+	case ErrTransactionNotFound:
+		SendResponse(c, http.StatusNotFound, err.Error(), nil)
+	case ErrTransactionAlreadyPaid:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrInvalidToken:
+		SendResponse(c, http.StatusUnauthorized, err.Error(), nil)
+	case ErrInvalidUsername:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrInvalidPassword:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrInvalidUsernamePassword:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrCompanyNameAlreadyExist:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrInvalidMeatName:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrInvalidAmount:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrInvalidInvoiceNumber:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrCreditPaymentNotFound:
+		SendResponse(c, http.StatusNotFound, err.Error(), nil)
+	case ErrInsufficientMeatStock:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrMeatStockNotEnough:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrInvalidPrice:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	default:
+		logrus.Error(err)
+		SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+	}
+}

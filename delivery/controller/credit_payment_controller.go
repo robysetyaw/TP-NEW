@@ -43,13 +43,7 @@ func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 	payment.CreatedBy = userName
 	transaction, err := cc.creditPaymentUseCase.CreateCreditPayment(&payment)
 	if err != nil {
-		if err == utils.ErrInvoiceNumberNotExist {
-			utils.SendResponse(c, http.StatusNotFound, "Invoice number does not exist", nil)
-		} else if err == utils.ErrInvoiceAlreadyPaid {
-			utils.SendResponse(c, http.StatusConflict, "Invoice is already paid", nil)
-		} else {
-			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
-		}
+		utils.HandleError(c, err)
 		logrus.Error(err)
 		return
 	}
@@ -81,11 +75,7 @@ func (cc *CreditPaymentController) GetCreditPaymentByID(c *gin.Context) {
 
 	payment, err := cc.creditPaymentUseCase.GetCreditPaymentByID(id)
 	if err != nil {
-		if err == utils.ErrCreditPaymentNotFound {
-			utils.SendResponse(c, http.StatusNotFound, "Credit payment not found", nil)
-		} else {
-			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
-		}
+		utils.HandleError(c, err)
 		logrus.Error(err)
 		return
 	}
@@ -107,11 +97,7 @@ func (cc *CreditPaymentController) UpdateCreditPayment(c *gin.Context) {
 
 	err := cc.creditPaymentUseCase.UpdateCreditPayment(&payment)
 	if err != nil {
-		if err == utils.ErrCreditPaymentNotFound {
-			utils.SendResponse(c, http.StatusNotFound, "Credit payment not found", nil)
-		} else {
-			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
-		}
+		utils.HandleError(c, err)
 		logrus.Error(err)
 		return
 	}
@@ -132,11 +118,7 @@ func (cc *CreditPaymentController) GetCreditPaymentsByInvoiceNumber(c *gin.Conte
 
 	payments, err := cc.creditPaymentUseCase.GetCreditPaymentsByInvoiceNumber(invoice_number)
 	if err != nil {
-		if err == utils.ErrCreditPaymentNotFound {
-			utils.SendResponse(c, http.StatusNotFound, "Credit payment not found", nil)
-		} else {
-			utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
-		}
+		utils.HandleError(c, err)
 		logrus.Error(err)
 		return
 	}

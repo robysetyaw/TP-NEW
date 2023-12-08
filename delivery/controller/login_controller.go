@@ -37,15 +37,9 @@ func (uc *LoginController) Login(c *gin.Context) {
 	logrus.Infof("[%s] is logging in", loginData.Username)
 	token, err := uc.loginUseCase.Login(loginData.Username, loginData.Password)
 	if err != nil {
-		if err == utils.ErrInvalidUsernamePassword {
-			logrus.Error(err)
-			utils.SendResponse(c, http.StatusUnauthorized, "Invalid username or password", nil)
-			return
-		} else {
-			logrus.Error(err)
-			utils.SendResponse(c, http.StatusInternalServerError, "Failed to login", nil)
-			return
-		}
+		logrus.Error(err)
+		utils.HandleError(c, err)
+		return
 	}
 	logrus.Infof("[%s] logged in successfully", loginData.Username)
 	utils.SendResponse(c, http.StatusOK, "Login success", token)

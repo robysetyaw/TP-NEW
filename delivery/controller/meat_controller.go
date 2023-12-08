@@ -48,13 +48,8 @@ func (mc *MeatController) CreateMeat(ctx *gin.Context) {
 	meat.ID = uuid.New().String()
 	err = mc.meatUseCase.CreateMeat(&meat)
 	if err != nil {
-		if err == utils.ErrMeatNameAlreadyExist {
-			logrus.Error(err)
-			utils.SendResponse(ctx, http.StatusConflict, "meatname already exists", nil)
-		} else {
-			logrus.Error(err)
-			utils.SendResponse(ctx, http.StatusInternalServerError, "Failed to create meat", nil)
-		}
+		utils.HandleError(ctx, err)
+		logrus.Error(err)
 		return
 	}
 	logrus.Info("Meat created successfully, meatname ", meat.Name)

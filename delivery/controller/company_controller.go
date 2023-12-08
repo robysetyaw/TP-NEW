@@ -48,13 +48,8 @@ func (cc *CompanyController) CreateCompany(c *gin.Context) {
 	company.IsActive = true
 
 	if err := cc.companyUseCase.CreateCompany(&company); err != nil {
-		if err == utils.ErrCompanyNameAlreadyExist {
-			logrus.WithField("error", err).Error("Company name already exists")
-			utils.SendResponse(c, http.StatusConflict, "Company name already exists", nil)
-		} else {
-			logrus.Error(err)
-			utils.SendResponse(c, http.StatusInternalServerError, "Failed to create company", nil)
-		}
+		logrus.Error(err)
+		utils.HandleError(c, err)
 	}
 
 	utils.SendResponse(c, http.StatusOK, "Success create company", company)
@@ -80,20 +75,10 @@ func (cc *CompanyController) UpdateCompany(c *gin.Context) {
 	CompanyRequest.ID = companyID
 
 	companyResponse, err := cc.companyUseCase.UpdateCompany(&CompanyRequest)
-	if err != nil{
-		if err == utils.ErrCompanyNotFound {
-			logrus.WithField("error", err).Error("Company not found")
-			utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
-			return
-		} else if err == utils.ErrCompanyNameAlreadyExist {
-			logrus.WithField("error", err).Error("Company name already exists")
-			utils.SendResponse(c, http.StatusConflict, "Company name already exists", nil)
-			return
-		} else {
-			logrus.Error(err)
-			utils.SendResponse(c, http.StatusInternalServerError, "Failed to update company", nil)
-			return
-		}
+	if err != nil {
+		logrus.Error(err)
+		utils.HandleError(c, err)
+		return
 	}
 
 	utils.SendResponse(c, http.StatusOK, "Success update company", companyResponse)
@@ -111,15 +96,9 @@ func (cc *CompanyController) GetCompanyById(c *gin.Context) {
 	company, err := cc.companyUseCase.GetCompanyById(companyId)
 
 	if err != nil {
-		if condition := err == utils.ErrCompanyNotFound; condition {
-			logrus.WithField("error", err).Error("Company not found")
-			utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
-			return
-		} else {
-			logrus.Error(err)
-			utils.SendResponse(c, http.StatusInternalServerError, "Failed to get company", nil)
-			return
-		}
+		logrus.Error(err)
+		utils.HandleError(c, err)
+		return
 	}
 	logrus.Info("Company found", company)
 	utils.SendResponse(c, http.StatusOK, "Success get company", company)
@@ -136,7 +115,7 @@ func (cc *CompanyController) GetAllCompany(c *gin.Context) {
 	companies, err := cc.companyUseCase.GetAllCompany()
 	if err != nil {
 		logrus.Error(err)
-		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get company", nil)
+		utils.HandleError(c, err)
 		return
 	}
 
@@ -154,13 +133,8 @@ func (cc *CompanyController) DeleteCompany(c *gin.Context) {
 	companyId := c.Param("id")
 	logrus.Infof("[%s] is deleting a company", username)
 	if err := cc.companyUseCase.DeleteCompany(companyId); err != nil {
-		if err == utils.ErrCompanyNotFound {
-			utils.SendResponse(c, http.StatusNotFound, "Company not found", nil)
-			return
-		} else {
-			utils.SendResponse(c, http.StatusInternalServerError, "Failed to delete company", nil)
-			return
-		}
+		logrus.Error(err)
+		utils.HandleError(c, err)
 	}
 
 	utils.SendResponse(c, http.StatusOK, "Success delete company", nil)
