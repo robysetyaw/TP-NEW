@@ -106,6 +106,9 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		if meat == nil {
 			return nil, utils.ErrMeatNotFound
 		}
+		if detail.Price <= 0 {
+			return nil, utils.ErrInvalidPrice
+		}
 		detail.ID = uuid.NewString()
 		detail.MeatID = meat.ID
 		detail.MeatName = meat.Name
