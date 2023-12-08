@@ -113,10 +113,6 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		detail.IsActive = true
 		detail.CreatedBy = transaction.CreatedBy
 
-		if detail.Qty >= meat.Stock {
-			return nil, utils.ErrMeatStockNotEnough
-		}
-
 		if transaction.TxType == "in" {
 			err := uc.meatRepo.IncreaseStock(meat.ID, detail.Qty)
 			if err != nil {
@@ -129,6 +125,9 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 			}
 		}
 		if transaction.TxType == "out" {
+			if detail.Qty >= meat.Stock {
+				return nil, utils.ErrMeatStockNotEnough
+			}
 			err = uc.meatRepo.ReduceStock(meat.ID, detail.Qty)
 			if err != nil {
 				logrus.WithFields(logrus.Fields{
