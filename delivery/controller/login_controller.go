@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"trackprosto/delivery/middleware"
 	"trackprosto/delivery/utils"
 	model "trackprosto/models"
 	"trackprosto/usecase"
@@ -19,6 +20,7 @@ func NewLoginController(r *gin.Engine, loginUC usecase.LoginUseCase) {
 		loginUseCase: loginUC,
 	}
 	r.POST("/login", loginController.Login)
+	r.POST("/send-log", middleware.JWTAuthMiddleware("employee", "admin", "owner", "developer"), loginController.SendLog)
 }
 
 func (uc *LoginController) Login(c *gin.Context) {
@@ -43,4 +45,21 @@ func (uc *LoginController) Login(c *gin.Context) {
 	}
 	logrus.Infof("[%s] logged in successfully", loginData.Username)
 	utils.SendResponse(c, http.StatusOK, "Login success", token)
+}
+
+func (uc *LoginController) SendLog(c *gin.Context) {
+	// Mendapatkan log dari body request
+	var logRequest struct {
+		Log string `json:"log"`
+	}
+
+	if err := c.ShouldBindJSON(&logRequest); err != nil {
+		logrus.Error("Invalid log format")
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid log format", nil)
+		return
+	}
+
+	// Memasukkan log ke dalam logrus
+	logrus.Infof("[Frontend Log] %s", logRequest.Log)
+	utils.SendResponse(c, http.StatusOK, "Log created", nil)
 }
