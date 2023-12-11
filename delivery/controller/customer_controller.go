@@ -23,13 +23,13 @@ func NewCustomerController(r *gin.Engine, customerUsecase usecase.CustomerUsecas
 	controller := &CustomerController{
 		customerUsecase: customerUsecase,
 	}
-	r.POST("/customers", middleware.JWTAuthMiddleware(), controller.CreateCustomer)
-	r.GET("/customers", middleware.JWTAuthMiddleware(), controller.GetAllCustomer)
-	r.GET("/customers/:id", middleware.JWTAuthMiddleware(), controller.GetCustomerByID)
-	r.PUT("/customers/:id", middleware.JWTAuthMiddleware(), controller.UpdateCustomer)
-	r.DELETE("/customers/:id", middleware.JWTAuthMiddleware(), controller.DeleteCustomer)
-	r.GET("customers/company/:company_id", middleware.JWTAuthMiddleware(), controller.GetAllCustomerByCompanyId)
-	r.GET("/customers/transaction/:id", middleware.JWTAuthMiddleware(), controller.GetAllTransactionsByCustomerId)
+	r.POST("/customers", middleware.JWTAuthMiddleware("admin", "owner", "developer"), controller.CreateCustomer)
+	r.GET("/customers", middleware.JWTAuthMiddleware("employee", "admin", "owner", "developer"), controller.GetAllCustomer)
+	r.GET("/customers/:id", middleware.JWTAuthMiddleware("employee", "admin", "owner", "developer"), controller.GetCustomerByID)
+	r.PUT("/customers/:id", middleware.JWTAuthMiddleware("admin", "owner", "developer"), controller.UpdateCustomer)
+	r.DELETE("/customers/:id", middleware.JWTAuthMiddleware("owner", "developer"), controller.DeleteCustomer)
+	r.GET("customers/company/:company_id", middleware.JWTAuthMiddleware("employee", "admin", "owner", "developer"), controller.GetAllCustomerByCompanyId)
+	r.GET("/customers/transaction/:id", middleware.JWTAuthMiddleware("employee", "admin", "owner", "developer"), controller.GetAllTransactionsByCustomerId)
 	return controller
 }
 

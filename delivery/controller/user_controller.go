@@ -21,12 +21,12 @@ func NewUserController(r *gin.Engine, userUC usecase.UserUseCase) {
 		userUseCase: userUC,
 	}
 
-	r.POST("/users", userController.CreateUser)
-	r.PUT("/users/:id", userController.UpdateUser)
+	r.POST("/users", middleware.JWTAuthMiddleware("owner", "developer"), userController.CreateUser)
+	r.PUT("/users/:id", middleware.JWTAuthMiddleware("owner", "developer"), userController.UpdateUser)
 	// r.GET("/users/:id", userController.GetUserByID)
-	r.GET("/users/:username", middleware.JWTAuthMiddleware(), userController.GetUserByUsername)
-	r.GET("/users", middleware.JWTAuthMiddleware(), userController.GetAllUsers)
-	r.DELETE("/users/:username", middleware.JWTAuthMiddleware(), userController.DeleteUser)
+	r.GET("/users/:username", middleware.JWTAuthMiddleware("owner", "developer"), userController.GetUserByUsername)
+	r.GET("/users", middleware.JWTAuthMiddleware("owner", "developer"), userController.GetAllUsers)
+	r.DELETE("/users/:username", middleware.JWTAuthMiddleware("owner", "developer"), userController.DeleteUser)
 }
 func (uc *UserController) CreateUser(c *gin.Context) {
 	var user model.User

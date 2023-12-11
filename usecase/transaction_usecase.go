@@ -111,7 +111,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		}
 		if detail.Qty <= 0 {
 			return nil, utils.ErrInvalidQty
-		}
+		} 
 		detail.ID = uuid.NewString()
 		detail.MeatID = meat.ID
 		detail.MeatName = meat.Name

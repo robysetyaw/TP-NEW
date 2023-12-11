@@ -22,10 +22,10 @@ func NewTransactionController(r *gin.Engine, transactionUseCase usecase.Transact
 		transactionUseCase: transactionUseCase,
 	}
 
-	r.POST("/transactions", middleware.JWTAuthMiddleware(), middleware.JSONMiddleware(), controller.CreateTransaction)
-	r.GET("/transactions/:invoice_number", middleware.JWTAuthMiddleware(), controller.GetTransactionByInvoiceNumber)
-	r.GET("/transactions", middleware.JWTAuthMiddleware(), controller.GetAllTransactions)
-	r.DELETE("/transactions/:id", middleware.JWTAuthMiddleware(), controller.DeleteTransaction)
+	r.POST("/transactions", middleware.JWTAuthMiddleware("admin", "owner", "developer"), middleware.JSONMiddleware(), controller.CreateTransaction)
+	r.GET("/transactions/:invoice_number", middleware.JWTAuthMiddleware("admin", "owner", "developer"), controller.GetTransactionByInvoiceNumber)
+	r.GET("/transactions", middleware.JWTAuthMiddleware("admin", "owner", "developer"), controller.GetAllTransactions)
+	r.DELETE("/transactions/:id", middleware.JWTAuthMiddleware("admin", "owner", "developer"), controller.DeleteTransaction)
 
 	return controller
 }

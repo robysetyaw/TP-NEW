@@ -22,11 +22,11 @@ func NewMeatController(r *gin.Engine, meatUC usecase.MeatUseCase) {
 		meatUseCase: meatUC,
 	}
 
-	r.POST("/meats", middleware.JWTAuthMiddleware(), meatController.CreateMeat)
-	r.GET("/meats", middleware.JWTAuthMiddleware(), meatController.GetAllMeats)
-	r.GET("/meats/:name", middleware.JWTAuthMiddleware(), meatController.GetMeatByName)
-	r.DELETE("/meats/:id", middleware.JWTAuthMiddleware(), meatController.DeleteMeat)
-	r.PUT("/meats/:id", middleware.JWTAuthMiddleware(), meatController.UpdateMeat)
+	r.POST("/meats", middleware.JWTAuthMiddleware("admin", "owner", "developer"), meatController.CreateMeat)
+	r.GET("/meats", middleware.JWTAuthMiddleware("employee", "admin", "owner", "developer"), meatController.GetAllMeats)
+	r.GET("/meats/:name", middleware.JWTAuthMiddleware("employee", "admin", "owner", "developer"), meatController.GetMeatByName)
+	r.DELETE("/meats/:id", middleware.JWTAuthMiddleware("admin", "owner", "developer"), meatController.DeleteMeat)
+	r.PUT("/meats/:id", middleware.JWTAuthMiddleware("admin", "owner", "developer"), meatController.UpdateMeat)
 }
 
 func (mc *MeatController) CreateMeat(ctx *gin.Context) {

@@ -19,8 +19,8 @@ func NewCreditPaymentController(r *gin.Engine, creditPaymentUseCase usecase.Cred
 	controller := &CreditPaymentController{
 		creditPaymentUseCase: creditPaymentUseCase,
 	}
-	r.POST("/credit_payment", middleware.JWTAuthMiddleware(), controller.CreateCreditPayment)
-	r.GET("/credit_payments/:invoice_number", middleware.JWTAuthMiddleware(), controller.GetCreditPaymentsByInvoiceNumber)
+	r.POST("/credit_payment", middleware.JWTAuthMiddleware("admin", "owner", "developer"), controller.CreateCreditPayment)
+	r.GET("/credit_payments/:invoice_number", middleware.JWTAuthMiddleware("admin", "owner", "developer"), controller.GetCreditPaymentsByInvoiceNumber)
 	return controller
 }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func JWTAuthMiddleware() gin.HandlerFunc {
+func JWTAuthMiddleware(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Mendapatkan token dari header Authorization
 		authHeader := c.GetHeader("Authorization")
@@ -37,16 +37,26 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 
 		// Memeriksa peran pengguna
 		role, ok := claims["role"].(string)
-		if !ok || role != "admin" {
-			logrus.Error("Access denied. Admin role required")
-			utils.SendResponse(c, http.StatusForbidden, "Access denied. Admin role required", nil)
+		if !ok || !contains(allowedRoles, role) {
+			logrus.Error("Access denied. Invalid role")
+			utils.SendResponse(c, http.StatusForbidden, "Access denied. Invalid role", nil)
 			c.Abort()
 			return
 		}
 		c.Set("claims", claims)
+		c.Set("claims", claims)
 
 		c.Next()
 	}
+}
+
+func contains(slice []string, value string) bool {
+	for _, v := range slice {
+		if v == value {
+			return true
+		}
+	}
+	return false
 }
 
 func JSONMiddleware() gin.HandlerFunc {
