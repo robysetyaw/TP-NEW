@@ -92,6 +92,35 @@ func GetUsernameFromContext(c *gin.Context) (string, error) {
 	return username, nil
 }
 
+func GetUserDetailsFromContext(c *gin.Context) (string, string, error) {
+	token, err := ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
+	if err != nil {
+		logrus.Error(err)
+		return "", "", err
+	}
+
+	claims, err := VerifyJWTToken(token)
+	if err != nil {
+		logrus.Error(err)
+		return "", "", err
+	}
+
+	username, ok := claims["username"].(string)
+	if !ok {
+		logrus.Error("Username not found in claims")
+		return "", "", errors.New("username not found in claims")
+	}
+
+	role, ok := claims["role"].(string)
+	if !ok {
+		logrus.Error("Role not found in claims")
+		return "", "", errors.New("role not found in claims")
+	}
+
+	return username, role, nil
+}
+
+
 func NonEmpty(value, defaultValue string) string {
 	if value != "" {
 		return value

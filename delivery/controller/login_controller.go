@@ -58,8 +58,13 @@ func (uc *LoginController) SendLog(c *gin.Context) {
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid log format", nil)
 		return
 	}
-
+	username, role, err := utils.GetUserDetailsFromContext(c)
+	if err != nil {
+		logrus.Error(err)
+		utils.HandleError(c, err)
+		return
+	}
 	// Memasukkan log ke dalam logrus
-	logrus.Infof("[Frontend Log] %s", logRequest.Log)
+	logrus.Infof("[Frontend Log][%s][%s] %s", username, role, logRequest.Log)
 	utils.SendResponse(c, http.StatusOK, "Log created", nil)
 }
