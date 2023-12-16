@@ -1,0 +1,1 @@
+ALTER TABLE transaction_headers ADD COLUMN debt NUMERIC;
