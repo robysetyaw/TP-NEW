@@ -35,6 +35,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	today := time.Now().Format("20060102")
 	todayDate := time.Now().Format("2006-01-02")
 	number, err := uc.transactionRepo.CountTransactions()
+	notes := "Settled"
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +159,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 
 	if newTotal > transaction.PaymentAmount {
 		transaction.PaymentStatus = "unpaid"
+		notes = "Down Payment"
 		transaction.Debt = newTotal - transaction.PaymentAmount
 	}
 
@@ -196,6 +198,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 			UpdatedAt:     transaction.CreatedAt,
 			CreatedBy:     transaction.CreatedBy,
 			UpdatedBy:     transaction.CreatedBy,
+			Notes:         notes,
 		})
 	}()
 

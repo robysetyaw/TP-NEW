@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	model "trackprosto/models"
 
@@ -133,4 +134,29 @@ func NonZero(value, defaultValue float64) float64 {
 		return value
 	}
 	return defaultValue
+}
+
+func NumberToOrdinal(n int) string {
+	if n <= 0 {
+		return strconv.Itoa(n)
+	}
+
+	// Menangani kasus khusus untuk angka 11, 12, dan 13
+	if n >= 11 && n <= 13 {
+		return strconv.Itoa(n) + "th"
+	}
+
+	lastDigit := n % 10
+	ordinalSuffix := "th"
+
+	switch lastDigit {
+	case 1:
+		ordinalSuffix = "st"
+	case 2:
+		ordinalSuffix = "nd"
+	case 3:
+		ordinalSuffix = "rd"
+	}
+
+	return strconv.Itoa(n) + ordinalSuffix
 }

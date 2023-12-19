@@ -51,24 +51,25 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 		return nil, utils.ErrInvoiceAlreadyPaid
 	}
 
+	CountCreditPayments, err := uc.creditPaymentRepo.CountCreditPayments(payment.InvoiceNumber)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"invoiceNumber": payment.InvoiceNumber,
+			"error":         err,
+		}).Error("Failed to count credit payment")
+		return nil, err
+	}
+	totalcount := CountCreditPayments
+
 	createdat := time.Now()
 	todayDate := time.Now().Format("2006-01-02")
 	payment.ID = uuid.NewString()
 	payment.PaymentDate = todayDate
 	payment.CreatedAt = createdat
 	payment.UpdatedAt = createdat
-	// payment.CreatedBy = "admin"
 	payment.UpdatedBy = payment.CreatedBy
+	payment.Notes = utils.NumberToOrdinal(totalcount+1) + " Installment"
 
-	err = uc.creditPaymentRepo.CreateCreditPayment(payment)
-	if err != nil {
-		tx.Rollback() // Rollback in case of error
-		log.WithFields(log.Fields{
-			"invoiceNumber": payment.InvoiceNumber,
-			"error":         err,
-		}).Error("Failed to create credit payment")
-		return nil, err
-	}
 	totalCredit, err := uc.creditPaymentRepo.GetTotalCredit(payment.InvoiceNumber)
 	if err != nil {
 		tx.Rollback() // Rollback in case of error
@@ -78,11 +79,9 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 		}).Error("Failed to get total credit")
 		return nil, err
 	}
-	newDebt := transaction.Total - totalCredit
-	uc.transactionRepo.UpdateStatusPaymentAmount(transaction.ID, totalCredit)
-	uc.transactionRepo.UpdateDebtTransaction(transaction.ID, newDebt)
-
-	if totalCredit >= transaction.Total {
+	totalAmountAfterCredit := totalCredit + payment.Amount
+	if totalAmountAfterCredit >= transaction.Total {
+		payment.Notes = "Settled"
 		err = uc.transactionRepo.UpdateStatusInvoicePaid(transaction.ID)
 		if err != nil {
 			tx.Rollback() // Rollback in case of error
@@ -93,6 +92,24 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 			return nil, err
 		}
 	}
+	if totalAmountAfterCredit > transaction.Total {
+		tx.Rollback() // Rollback in case of error
+		return nil, utils.ErrAmountGreaterThanTotal
+	}
+	err = uc.creditPaymentRepo.CreateCreditPayment(payment)
+	if err != nil {
+		tx.Rollback() // Rollback in case of error
+		log.WithFields(log.Fields{
+			"invoiceNumber": payment.InvoiceNumber,
+			"error":         err,
+		}).Error("Failed to create credit payment")
+		return nil, err
+	}
+
+	newDebt := transaction.Total - totalAmountAfterCredit
+	uc.transactionRepo.UpdateStatusPaymentAmount(transaction.ID, totalAmountAfterCredit)
+	uc.transactionRepo.UpdateDebtTransaction(transaction.ID, newDebt)
+
 	// Update the transaction after the payment amount update
 	transaction.PaymentAmount = totalCredit
 	transaction.Debt = newDebt
