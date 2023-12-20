@@ -162,6 +162,6 @@ func (tc *TransactionController) GetTransactionByInvoiceNumber(c *gin.Context) {
 		return
 	}
 
-	logrus.Infof("[%v] Transaction found, invoice number = %v", username)
+	logrus.Infof("[%v] Transaction found, invoice number = %v", username, invoice_number)
 	utils.SendResponse(c, http.StatusOK, "Transaction found", transaction)
 }
