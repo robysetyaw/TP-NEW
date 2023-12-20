@@ -216,7 +216,7 @@ func (cc *CustomerController) GetAllTransactionsByCustomerId(c *gin.Context) {
 		utils.HandleError(c, err)
 		return
 	}
-
+	logrus.Infof("[%s] get all transaction by customer id", username)
 	utils.SendResponse(c, http.StatusOK, "Success", customerTransactions)
 
 }

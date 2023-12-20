@@ -88,27 +88,31 @@ func (mc *MeatController) GetAllMeats(c *gin.Context) {
 		"itemsPerPage": itemsPerPage,
 		"totalPages":   totalPages,
 	}
-	logrus.Info("Success get all meats", paginationData, meats)
+	logrus.Infof("[%v] Get all meats %v, %v", username, paginationData, meats)
 	utils.SendResponse(c, http.StatusOK, "Success", map[string]interface{}{"pagination": paginationData, "meats": meats})
 }
 
 func (mc *MeatController) GetMeatByName(c *gin.Context) {
 	name := c.Param("name")
+	username, err := utils.GetUsernameFromContext(c)
 	meat, err := mc.meatUseCase.GetMeatByName(name)
 	if err != nil {
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get meat", nil)
 		return
 	}
 	if meat == nil {
+		logrus.Errorf("[%v] Meat not found", username)
 		utils.SendResponse(c, http.StatusNotFound, "Meat not found", nil)
 		return
 	}
-
+	logrus.Infof("[%v] Get meat %v", username, name)
 	utils.SendResponse(c, http.StatusOK, "Success", meat)
 }
 
 func (mc *MeatController) GetMeatById(c *gin.Context) {
 	id := c.Param("id")
+	username, err := utils.GetUsernameFromContext(c)
 	meat, err := mc.meatUseCase.GetMeatByName(id)
 	if err != nil {
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get meat", nil)
@@ -118,7 +122,7 @@ func (mc *MeatController) GetMeatById(c *gin.Context) {
 		utils.SendResponse(c, http.StatusNotFound, "Meat not found", nil)
 		return
 	}
-
+	logrus.Infof("[%v] Get meat %v", username, id)
 	utils.SendResponse(c, http.StatusOK, "Success", meat)
 }
 
@@ -142,7 +146,7 @@ func (uc *MeatController) DeleteMeat(c *gin.Context) {
 
 		}
 	}
-
+	logrus.Infof("[%v] Deleted meat %v", username, meatID)
 	utils.SendResponse(c, http.StatusOK, "Success", nil)
 }
 
@@ -177,6 +181,6 @@ func (uc *MeatController) UpdateMeat(ctx *gin.Context) {
 		}
 	}
 
-	logrus.Info("Meat updated successfully", meat)
+	logrus.Infof("[%s] Meat updated successfully %v", userName, meat)
 	utils.SendResponse(ctx, http.StatusOK, "Success", meat)
 }

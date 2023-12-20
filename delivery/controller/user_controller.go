@@ -54,11 +54,11 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 			utils.SendResponse(c, http.StatusConflict, "username already exists", nil)
 			return
 		}
-		logrus.Infof("[%v] Created user %v", username, user.Username)
+		
 		utils.SendResponse(c, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
-
+	logrus.Infof("[%v] Created user %v", username, user.Username)
 	utils.SendResponse(c, http.StatusOK, "Success", user)
 }
 

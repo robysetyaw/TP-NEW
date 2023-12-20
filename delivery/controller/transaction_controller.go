@@ -64,19 +64,20 @@ func (tc *TransactionController) CreateTransaction(c *gin.Context) {
 		return
 	}
 
-	logrus.Info("Transaction created successfully, ", transaction)
+	logrus.Infof("[%v] Transaction successfully added with id = %v, invoice number = %v", username, transaction.ID, transaction.InvoiceNumber)
 	utils.SendResponse(c, http.StatusOK, "Transaction created successfully", transaction)
 }
 
 func (tc *TransactionController) GetTransactionByID(c *gin.Context) {
 	id := c.Param("id")
-
+	username, err := utils.GetUsernameFromContext(c)
 	transaction, err := tc.transactionUseCase.GetTransactionByID(id)
 	if err != nil {
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusNotFound, err.Error(), nil)
 		return
 	}
-
+	logrus.Infof("[%v] Transaction found, id = %v", username)
 	utils.SendResponse(c, http.StatusOK, "Transaction found", transaction)
 }
 
@@ -118,6 +119,7 @@ func (tc *TransactionController) GetAllTransactions(c *gin.Context) {
 	}
 
 	logrus.Info("Success get all transactions", paginationData, transactions)
+	logrus.Infof("[%v] Transactions found with pagination data = %v and transactions = %v", username, paginationData, transactions)
 	utils.SendResponse(c, http.StatusOK, "Transactions found", map[string]interface{}{"transactions": transactions, "pagination": paginationData})
 }
 
@@ -136,7 +138,7 @@ func (tc *TransactionController) DeleteTransaction(c *gin.Context) {
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
-	logrus.Info("Transaction deleted successfully, id = ", id)
+	logrus.Infof("[%v] Transaction deleted successfully, id = %v", username, id)
 	utils.SendResponse(c, http.StatusOK, "Transaction deleted successfully", nil)
 }
 
@@ -160,6 +162,6 @@ func (tc *TransactionController) GetTransactionByInvoiceNumber(c *gin.Context) {
 		return
 	}
 
-	logrus.Info("Transaction found", transaction)
+	logrus.Infof("[%v] Transaction found, invoice number = %v", username)
 	utils.SendResponse(c, http.StatusOK, "Transaction found", transaction)
 }

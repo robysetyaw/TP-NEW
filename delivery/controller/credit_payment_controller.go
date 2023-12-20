@@ -47,7 +47,7 @@ func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 		logrus.Errorf("[%v]%v", username, err)
 		return
 	}
-	logrus.Info("Credit Payment successfully added")
+	logrus.Infof("[%v] Credit Payment successfully added with id = %v", username, transaction.Transaction.ID)
 	utils.SendResponse(c, http.StatusOK, "Credit Payment successfully added", transaction)
 }
 
@@ -66,7 +66,7 @@ func (cc *CreditPaymentController) GetCreditPayments(c *gin.Context) {
 		return
 	}
 
-	logrus.Info("Credit Payment found", payments)
+	logrus.Infof("[%v] Credit Payment found", username)
 	utils.SendResponse(c, http.StatusOK, "Success get credit payments", payments)
 }
 
@@ -79,7 +79,7 @@ func (cc *CreditPaymentController) GetCreditPaymentByID(c *gin.Context) {
 		logrus.Errorf("[%v]%v", username, err)
 		return
 	}
-
+	logrus.Infof("[%v] Credit Payment found, paymet id = %v", username, payment.ID)
 	utils.SendResponse(c, http.StatusOK, "Success get credit payment by ID", payment)
 }
 
@@ -95,7 +95,6 @@ func (cc *CreditPaymentController) UpdateCreditPayment(c *gin.Context) {
 	}
 
 	payment.ID = id
-
 	err = cc.creditPaymentUseCase.UpdateCreditPayment(&payment)
 	if err != nil {
 		utils.HandleError(c, err)
@@ -103,7 +102,7 @@ func (cc *CreditPaymentController) UpdateCreditPayment(c *gin.Context) {
 		return
 	}
 
-	logrus.Info("Credit payment updated successfully", payment)
+	logrus.Infof("[%v] Credit Payment updated successfully, payment id = %v", username, payment.ID)
 	utils.SendResponse(c, http.StatusOK, "Credit payment updated successfully", nil)
 }
 
@@ -124,6 +123,6 @@ func (cc *CreditPaymentController) GetCreditPaymentsByInvoiceNumber(c *gin.Conte
 		return
 	}
 
-	logrus.Info("Credit Payment found", payments)
+	logrus.Infof("[%v] Credit Payment found by invoice number = %v", username, invoice_number)
 	utils.SendResponse(c, http.StatusOK, "Success get credit payments", payments)
 }

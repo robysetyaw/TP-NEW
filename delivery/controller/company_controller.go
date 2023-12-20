@@ -53,6 +53,7 @@ func (cc *CompanyController) CreateCompany(c *gin.Context) {
 		utils.HandleError(c, err)
 	}
 
+	logrus.Infof("[%v] Created company %v", username, company.CompanyName)
 	utils.SendResponse(c, http.StatusOK, "Success create company", company)
 }
 
@@ -82,6 +83,7 @@ func (cc *CompanyController) UpdateCompany(c *gin.Context) {
 		return
 	}
 
+	logrus.Infof("[%v] Updated company %v", username, companyID)
 	utils.SendResponse(c, http.StatusOK, "Success update company", companyResponse)
 }
 
@@ -101,7 +103,7 @@ func (cc *CompanyController) GetCompanyById(c *gin.Context) {
 		utils.HandleError(c, err)
 		return
 	}
-	logrus.Info("Company found", company)
+	logrus.Infof("[%v] Company found", username)
 	utils.SendResponse(c, http.StatusOK, "Success get company", company)
 }
 
@@ -120,7 +122,7 @@ func (cc *CompanyController) GetAllCompany(c *gin.Context) {
 		return
 	}
 
-	logrus.Info("Company found", companies)
+	logrus.Infof("[%v] Company found", username)
 	utils.SendResponse(c, http.StatusOK, "Success get all company", companies)
 }
 
@@ -137,6 +139,6 @@ func (cc *CompanyController) DeleteCompany(c *gin.Context) {
 		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 	}
-
+	logrus.Infof("[%v] Deleted company %v", username, companyId)
 	utils.SendResponse(c, http.StatusOK, "Success delete company", nil)
 }
