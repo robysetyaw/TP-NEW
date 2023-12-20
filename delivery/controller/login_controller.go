@@ -32,7 +32,7 @@ func (uc *LoginController) Login(c *gin.Context) {
 	}
 
 	if loginData.Username == "" || loginData.Password == "" {
-		logrus.Error("Invalid username or password")
+		logrus.Errorf("Invalid username or password for [%s]", loginData.Username)
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid username or password", nil)
 		return
 	}
@@ -60,7 +60,7 @@ func (uc *LoginController) SendLog(c *gin.Context) {
 	}
 	username, role, err := utils.GetUserDetailsFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%s] %v", username, err)
 		utils.HandleError(c, err)
 		return
 	}

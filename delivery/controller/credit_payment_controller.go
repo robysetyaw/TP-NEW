@@ -26,25 +26,25 @@ func NewCreditPaymentController(r *gin.Engine, creditPaymentUseCase usecase.Cred
 
 func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 
-	userName, err := utils.GetUsernameFromContext(c)
+	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Infof("[%s] is creating a credit payment", userName)
+	logrus.Infof("[%s] is creating a credit payment", username)
 
 	var payment model.CreditPayment
 	if err := c.ShouldBindJSON(&payment); err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	payment.CreatedBy = userName
+	payment.CreatedBy = username
 	transaction, err := cc.creditPaymentUseCase.CreateCreditPayment(&payment)
 	if err != nil {
 		utils.HandleError(c, err)
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		return
 	}
 	logrus.Info("Credit Payment successfully added")
@@ -54,14 +54,14 @@ func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 func (cc *CreditPaymentController) GetCreditPayments(c *gin.Context) {
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
 	logrus.Infof("[%s] is geting a credit payment", username)
 	payments, err := cc.creditPaymentUseCase.GetCreditPayments()
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
@@ -72,11 +72,11 @@ func (cc *CreditPaymentController) GetCreditPayments(c *gin.Context) {
 
 func (cc *CreditPaymentController) GetCreditPaymentByID(c *gin.Context) {
 	id := c.Param("id")
-
+	username, err := utils.GetUsernameFromContext(c)
 	payment, err := cc.creditPaymentUseCase.GetCreditPaymentByID(id)
 	if err != nil {
 		utils.HandleError(c, err)
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		return
 	}
 
@@ -86,19 +86,20 @@ func (cc *CreditPaymentController) GetCreditPaymentByID(c *gin.Context) {
 func (cc *CreditPaymentController) UpdateCreditPayment(c *gin.Context) {
 	id := c.Param("id")
 
+	username, err := utils.GetUsernameFromContext(c)
 	var payment model.CreditPayment
 	if err := c.ShouldBindJSON(&payment); err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	payment.ID = id
 
-	err := cc.creditPaymentUseCase.UpdateCreditPayment(&payment)
+	err = cc.creditPaymentUseCase.UpdateCreditPayment(&payment)
 	if err != nil {
 		utils.HandleError(c, err)
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		return
 	}
 
@@ -109,7 +110,7 @@ func (cc *CreditPaymentController) UpdateCreditPayment(c *gin.Context) {
 func (cc *CreditPaymentController) GetCreditPaymentsByInvoiceNumber(c *gin.Context) {
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
@@ -119,7 +120,7 @@ func (cc *CreditPaymentController) GetCreditPaymentsByInvoiceNumber(c *gin.Conte
 	payments, err := cc.creditPaymentUseCase.GetCreditPaymentsByInvoiceNumber(invoice_number)
 	if err != nil {
 		utils.HandleError(c, err)
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		return
 	}
 

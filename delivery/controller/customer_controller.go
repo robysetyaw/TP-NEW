@@ -40,25 +40,25 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 		return
 	}
 
-	userName, err := utils.GetUsernameFromContext(c)
-	logrus.Infof("[%v] created customer %v ", userName, customer.FullName)
+	username, err := utils.GetUsernameFromContext(c)
+	logrus.Infof("[%v] created customer %v ", username, customer.FullName)
 	if err != nil {
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 
 	}
-	customer.CreatedBy = userName
+	customer.CreatedBy = username
 	customer.Id = uuid.New().String()
 	customer.Debt = 0
 
 	customers, err := cc.customerUsecase.CreateCustomer(&customer)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 		return
 	}
 
-	logrus.Infof("[%s] created succes create customer %s ", userName, customer.FullName)
+	logrus.Infof("[%s] created succes create customer %s ", username, customer.FullName)
 	utils.SendResponse(c, http.StatusOK, "success insert data customer", customers)
 }
 
@@ -70,22 +70,22 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 		return
 	}
 
-	userName, err := utils.GetUsernameFromContext(c)
+	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 	customer.UpdatedAt = time.Now()
-	customer.UpdatedBy = userName
+	customer.UpdatedBy = username
 	customer.Id = customerID
 
 	if err := cc.customerUsecase.UpdateCustomer(&customer); err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 	}
 
-	logrus.Infof("[%s] updated succes update customer %s ", userName, customer.FullName)
+	logrus.Infof("[%s] updated succes update customer %s ", username, customer.FullName)
 	utils.SendResponse(c, http.StatusOK, "success update data customer", customer)
 }
 
@@ -93,26 +93,26 @@ func (cc *CustomerController) GetAllCustomerByCompanyId(c *gin.Context) {
 	company_id := c.Param("company_id")
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 	}
 	logrus.Infof("[%s] get all customer ", username)
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page <= 0 {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid page number", nil)
 		return
 	}
 
 	itemsPerPage, err := strconv.Atoi(c.DefaultQuery("itemsPerPage", "10"))
 	if err != nil || itemsPerPage <= 0 {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid itemsPerPage", nil)
 		return
 	}
 	customers, totalPages, err := cc.customerUsecase.GetAllCustomerByCompanyId(page, itemsPerPage, company_id)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 	}
 
@@ -126,26 +126,26 @@ func (cc *CustomerController) GetAllCustomerByCompanyId(c *gin.Context) {
 func (cc *CustomerController) GetAllCustomer(c *gin.Context) {
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 	}
 	logrus.Infof("[%s] get all customer ", username)
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page <= 0 {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid page number", nil)
 		return
 	}
 
 	itemsPerPage, err := strconv.Atoi(c.DefaultQuery("itemsPerPage", "10"))
 	if err != nil || itemsPerPage <= 0 {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid itemsPerPage", nil)
 		return
 	}
 	customers, totalPages, err := cc.customerUsecase.GetAllCustomers(page, itemsPerPage)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
@@ -161,7 +161,7 @@ func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
 
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 
 	}
@@ -169,7 +169,7 @@ func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
 	customer_id := c.Param("id")
 	customers, err := cc.customerUsecase.GetCustomerById(customer_id)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 		return
 
@@ -179,9 +179,13 @@ func (cc *CustomerController) GetCustomerByID(c *gin.Context) {
 
 func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 	customerId := c.Param("id")
-
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Errorf("[%v]%v", username, err)
+		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+	}
 	if err := cc.customerUsecase.DeleteCustomer(customerId); err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 		return
 	}
@@ -195,7 +199,7 @@ func (cc *CustomerController) GetAllTransactionsByCustomerId(c *gin.Context) {
 
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
 	}
 	logrus.Infof("[%s] get all transaction by customer id", username)
@@ -208,7 +212,7 @@ func (cc *CustomerController) GetAllTransactionsByCustomerId(c *gin.Context) {
 
 	customerTransactions, err := cc.customerUsecase.GetAllTransactionsByCustomerId(customerId, paymentStatus)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 		return
 	}

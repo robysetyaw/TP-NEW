@@ -33,13 +33,14 @@ func NewCompanyController(r *gin.Engine, companyUseCase usecase.CompanyUseCase) 
 func (cc *CompanyController) CreateCompany(c *gin.Context) {
 	username, err := utils.GetUsernameFromContext(c)
 	if condition := err != nil; condition {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 	}
 	logrus.Infof("[%s] is creating a company", username)
 
 	var company model.Company
 	if err := c.ShouldBindJSON(&company); err != nil {
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, "Bad request", nil)
 		return
 	}
@@ -48,7 +49,7 @@ func (cc *CompanyController) CreateCompany(c *gin.Context) {
 	company.IsActive = true
 
 	if err := cc.companyUseCase.CreateCompany(&company); err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 	}
 
@@ -57,16 +58,16 @@ func (cc *CompanyController) CreateCompany(c *gin.Context) {
 
 func (cc *CompanyController) UpdateCompany(c *gin.Context) {
 	companyID := c.Param("id")
-
+	username, err := utils.GetUsernameFromContext(c)
 	var CompanyRequest dto.CompanyRequest
 	if err := c.ShouldBindJSON(&CompanyRequest); err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, "Bad request", nil)
 		return
 	}
 	userName, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Invalid token", nil)
 		return
 	}
@@ -76,7 +77,7 @@ func (cc *CompanyController) UpdateCompany(c *gin.Context) {
 
 	companyResponse, err := cc.companyUseCase.UpdateCompany(&CompanyRequest)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 		return
 	}
@@ -87,7 +88,7 @@ func (cc *CompanyController) UpdateCompany(c *gin.Context) {
 func (cc *CompanyController) GetCompanyById(c *gin.Context) {
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Invalid token", nil)
 		return
 	}
@@ -96,7 +97,7 @@ func (cc *CompanyController) GetCompanyById(c *gin.Context) {
 	company, err := cc.companyUseCase.GetCompanyById(companyId)
 
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 		return
 	}
@@ -107,14 +108,14 @@ func (cc *CompanyController) GetCompanyById(c *gin.Context) {
 func (cc *CompanyController) GetAllCompany(c *gin.Context) {
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Invalid token", nil)
 		return
 	}
 	logrus.Infof("[%s] is geting a company", username)
 	companies, err := cc.companyUseCase.GetAllCompany()
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 		return
 	}
@@ -126,14 +127,14 @@ func (cc *CompanyController) GetAllCompany(c *gin.Context) {
 func (cc *CompanyController) DeleteCompany(c *gin.Context) {
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Invalid token", nil)
 		return
 	}
 	companyId := c.Param("id")
 	logrus.Infof("[%s] is deleting a company", username)
 	if err := cc.companyUseCase.DeleteCompany(companyId); err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 	}
 

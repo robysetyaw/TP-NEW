@@ -32,14 +32,14 @@ func NewMeatController(r *gin.Engine, meatUC usecase.MeatUseCase) {
 func (mc *MeatController) CreateMeat(ctx *gin.Context) {
 	username, err := utils.GetUsernameFromContext(ctx)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(ctx, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
 	logrus.Infof("[%s] is creating a meat", username)
 	var meat model.Meat
 	if err := ctx.ShouldBindJSON(&meat); err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(ctx, http.StatusBadRequest, "Invalid request payload", nil)
 		return
 	}
@@ -49,7 +49,7 @@ func (mc *MeatController) CreateMeat(ctx *gin.Context) {
 	err = mc.meatUseCase.CreateMeat(&meat)
 	if err != nil {
 		utils.HandleError(ctx, err)
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		return
 	}
 	logrus.Info("Meat created successfully, meatname ", meat.Name)
@@ -59,27 +59,27 @@ func (mc *MeatController) CreateMeat(ctx *gin.Context) {
 func (mc *MeatController) GetAllMeats(c *gin.Context) {
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
 	logrus.Info("[", username, "] get all meats")
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page <= 0 {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid page number", nil)
 		return
 	}
 
 	itemsPerPage, err := strconv.Atoi(c.DefaultQuery("itemsPerPage", "10"))
 	if err != nil || itemsPerPage <= 0 {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, "Invalid itemsPerPage", nil)
 		return
 	}
 	meats, totalPages, err := mc.meatUseCase.GetAllMeats(page, itemsPerPage)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get meats", nil)
 		return
 	}
@@ -124,14 +124,19 @@ func (mc *MeatController) GetMeatById(c *gin.Context) {
 
 func (uc *MeatController) DeleteMeat(c *gin.Context) {
 	meatID := c.Param("id")
-
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Errorf("[%v]%v", username, err)
+		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
+		return
+	}
 	if err := uc.meatUseCase.DeleteMeat(meatID); err != nil {
 		if err == utils.ErrMeatNotFound {
-			logrus.Error(err)
+			logrus.Errorf("[%v]%v", username, err)
 			utils.SendResponse(c, http.StatusNotFound, "Meat not found", nil)
 			return
 		} else {
-			logrus.Error(err)
+			logrus.Errorf("[%v]%v", username, err)
 			utils.SendResponse(c, http.StatusInternalServerError, "Failed to delete meat", nil)
 			return
 
@@ -143,16 +148,16 @@ func (uc *MeatController) DeleteMeat(c *gin.Context) {
 
 func (uc *MeatController) UpdateMeat(ctx *gin.Context) {
 	meatID := ctx.Param("id")
-
+	username, err := utils.GetUsernameFromContext(ctx)
 	var meat model.Meat
 	if err := ctx.ShouldBindJSON(&meat); err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(ctx, http.StatusBadRequest, "Invalid request payload", nil)
 		return
 	}
 	userName, err := utils.GetUsernameFromContext(ctx)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(ctx, http.StatusUnauthorized, "Invalid token", nil)
 		return
 
@@ -162,11 +167,11 @@ func (uc *MeatController) UpdateMeat(ctx *gin.Context) {
 	logrus.Infof("[%s] is updating meat [%s]", userName, meatID)
 	if err := uc.meatUseCase.UpdateMeat(&meat); err != nil {
 		if err == utils.ErrMeatNotFound {
-			logrus.Error(err)
+			logrus.Errorf("[%v]%v", username, err)
 			utils.SendResponse(ctx, http.StatusNotFound, "Meat not found", nil)
 			return
 		} else {
-			logrus.Error(err)
+			logrus.Errorf("[%v]%v", username, err)
 			utils.SendResponse(ctx, http.StatusInternalServerError, "Failed to update meat", nil)
 			return
 		}
