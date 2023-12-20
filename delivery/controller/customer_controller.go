@@ -191,6 +191,7 @@ func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 
 func (cc *CustomerController) GetAllTransactionsByCustomerId(c *gin.Context) {
 	customerId := c.Param("id")
+	paymentStatus := c.Query("payment_status")
 
 	username, err := utils.GetUsernameFromContext(c)
 	if err != nil {
@@ -199,7 +200,13 @@ func (cc *CustomerController) GetAllTransactionsByCustomerId(c *gin.Context) {
 	}
 	logrus.Infof("[%s] get all transaction by customer id", username)
 
-	customerTransactions, err := cc.customerUsecase.GetAllTransactionsByCustomerId(customerId)
+	if paymentStatus != "" && paymentStatus != "paid" && paymentStatus != "unpaid" {
+		logrus.Errorf("[%s] Invalid payment status, please use paid or unpaid or empty ", username)
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid payment status, please use paid or unpaid or empty ", nil)
+		return
+	}
+
+	customerTransactions, err := cc.customerUsecase.GetAllTransactionsByCustomerId(customerId, paymentStatus)
 	if err != nil {
 		logrus.Error(err)
 		utils.HandleError(c, err)

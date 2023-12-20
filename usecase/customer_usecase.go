@@ -16,7 +16,7 @@ type CustomerUsecase interface {
 	GetAllCustomers(page int, itemsPerPage int) ([]*model.CustomerModel, int, error)
 	DeleteCustomer(id string) error
 	GetAllCustomerByCompanyId(page int, itemsPerPage int, company_id string) ([]*model.CustomerModel, int, error)
-	GetAllTransactionsByCustomerId(customer_id string) ([]*model.TransactionHeader, error)
+	GetAllTransactionsByCustomerId(customer_id string,tx_type string) ([]*model.TransactionHeader, error)
 }
 
 type customerUsecase struct {
@@ -36,7 +36,7 @@ func NewCustomerUsecase(cr repository.CustomerRepository, cpr repository.Company
 }
 
 // GetAllTransactionsByCustomerId implements CustomerUsecase.
-func (uc *customerUsecase) GetAllTransactionsByCustomerId(customer_id string) ([]*model.TransactionHeader, error) {
+func (uc *customerUsecase) GetAllTransactionsByCustomerId(customer_id string, payment_status string) ([]*model.TransactionHeader, error) {
 	custExist , err := uc.customerRepo.GetCustomerById(customer_id);
 	if custExist == nil {
 		return nil, utils.ErrCustomerNotFound
@@ -51,6 +51,17 @@ func (uc *customerUsecase) GetAllTransactionsByCustomerId(customer_id string) ([
 	if cust_transactions == nil {
 		return nil, utils.ErrTransactionNotFound
 	}
+
+	if payment_status != "" {
+        filteredTransactions := []*model.TransactionHeader{}
+        for _, transaction := range cust_transactions {
+            if transaction.PaymentStatus == payment_status {
+                filteredTransactions = append(filteredTransactions, transaction)
+            }
+        }
+        return filteredTransactions, nil
+    }
+
 	return cust_transactions, nil
 }
 func (uc *customerUsecase) CreateCustomer(customer *model.CustomerModel) (*model.CustomerModel, error) {
