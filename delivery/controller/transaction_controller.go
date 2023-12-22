@@ -77,7 +77,7 @@ func (tc *TransactionController) GetTransactionByID(c *gin.Context) {
 		utils.SendResponse(c, http.StatusNotFound, err.Error(), nil)
 		return
 	}
-	logrus.Infof("[%v] Transaction found, id = %v", username)
+	logrus.Infof("[%v] Transaction found, id = %v", username, id)
 	utils.SendResponse(c, http.StatusOK, "Transaction found", transaction)
 }
 
