@@ -133,9 +133,14 @@ func (uc *UserController) GetUserByID(c *gin.Context) {
 }
 
 func (uc *UserController) GetUserByUsername(c *gin.Context) {
-	username := c.Param("username")
-
-	user, err := uc.userUseCase.GetUserByUsername(username)
+	usernameParam := c.Param("username")
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		logrus.Errorf("[%v]%v", username, err)
+		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get userlogin", nil)
+		return
+	}
+	user, err := uc.userUseCase.GetUserByUsername(usernameParam)
 	if err != nil {
 		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get user", nil)
