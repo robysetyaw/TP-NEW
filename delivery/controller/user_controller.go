@@ -30,11 +30,19 @@ func NewUserController(r *gin.Engine, userUC usecase.UserUseCase) {
 }
 func (uc *UserController) CreateUser(c *gin.Context) {
 	var user model.User
-	username,err := utils.GetUsernameFromContext(c)
+	username, err := utils.GetUsernameFromContext(c)
 	if err := c.ShouldBindJSON(&user); err != nil {
 		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, "Bad request", nil)
 		return
+	}
+
+	logrus.Infof("[%v] Created user", username)
+
+	if user.Role != "owner" && user.Role != "developer" && user.Role != "admin" && user.Role != "employee" {
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid role, must be owner, developer, admin or employee", nil)
+		return
+
 	}
 
 	user.ID = uuid.New().String()
@@ -54,7 +62,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 			utils.SendResponse(c, http.StatusConflict, "username already exists", nil)
 			return
 		}
-		
+
 		utils.SendResponse(c, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
@@ -64,7 +72,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 
 func (uc *UserController) UpdateUser(c *gin.Context) {
 	userID := c.Param("username")
-	username,err := utils.GetUsernameFromContext(c)
+	username, err := utils.GetUsernameFromContext(c)
 	var user model.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		logrus.Errorf("[%v]%v", username, err)
