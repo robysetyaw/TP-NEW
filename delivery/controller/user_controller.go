@@ -143,7 +143,11 @@ func (uc *UserController) GetUserByUsername(c *gin.Context) {
 	user, err := uc.userUseCase.GetUserByUsername(usernameParam)
 	if err != nil {
 		logrus.Errorf("[%v]%v", username, err)
-		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get user", nil)
+		if err == utils.ErrUserNotFound {
+			utils.SendResponse(c, http.StatusNotFound, "User not found", nil)
+		}else{
+			utils.SendResponse(c, http.StatusInternalServerError, "Failed to get user", nil)
+		}
 		return
 	}
 	if user == nil {
