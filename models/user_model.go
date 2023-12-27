@@ -18,3 +18,11 @@ type User struct {
 	UpdatedBy string         `json:"updated_by"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"` // Jika Anda ingin soft delete
 }
+
+type UserRequest struct {
+	ID        string         `gorm:"type:uuid;primary_key;" json:"id"`
+	Username  string         `gorm:"uniqueIndex;not null" json:"username"`
+	Password  string         `json:"password"`
+	Role      string         `json:"role"`
+	UpdatedBy string         `json:"updated_by"`
+}

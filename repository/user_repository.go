@@ -16,6 +16,7 @@ type UserRepository interface {
 	GetAllUsers() ([]*model.User, error)
 	DeleteUser(id string) error
 	GetByUsername(username string) (*model.User, error)
+	CountUsers(username string) (int, error)
 }
 
 type userRepository struct {
@@ -24,6 +25,14 @@ type userRepository struct {
 
 func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{db: db}
+}
+
+func (r *userRepository) CountUsers(username string) (int, error) {
+    var count int64
+    if err := r.db.Model(&model.User{}).Where("is_active = true AND username = ?", username).Count(&count).Error; err != nil {
+        return 0, err
+    }
+    return int(count), nil
 }
 
 func (r *userRepository) CreateUser(user *model.User) error {

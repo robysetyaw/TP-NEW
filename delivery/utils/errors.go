@@ -32,6 +32,7 @@ var (
 	ErrMeatStockNotEnough      = errors.New("Meat stock not enough")
 	ErrInvalidPrice            = errors.New("Invalid Meat price")
 	ErrInvalidQty              = errors.New("Invalid quantity")
+	ErrUsernameAlreadyExist    = errors.New("Username already exists")
 )
 
 func HandleError(c *gin.Context, err error) {
@@ -79,6 +80,8 @@ func HandleError(c *gin.Context, err error) {
 	case ErrMeatStockNotEnough:
 		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
 	case ErrInvalidPrice:
+		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
+	case ErrUsernameAlreadyExist:
 		SendResponse(c, http.StatusBadRequest, err.Error(), nil)
 	default:
 		logrus.Error(err)

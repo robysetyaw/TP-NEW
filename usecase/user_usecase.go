@@ -10,7 +10,7 @@ import (
 
 type UserUseCase interface {
 	CreateUser(user *model.User) error
-	UpdateUser(user *model.User, username string) error
+	UpdateUser(user *model.UserRequest) error
 	GetUserByID(id string) (*model.User, error)
 	GetAllUsers() ([]*model.User, error)
 	DeleteUser(id string) error
@@ -52,21 +52,31 @@ func (uc *userUseCase) CreateUser(user *model.User) error {
 	return nil
 }
 
-func (uc *userUseCase) UpdateUser(user *model.User, username string) error {
-	// Implement any business logic or validation before updating the user
-	// You can also perform data manipulation or enrichment if needed
-	if user.Username != username {
-		existingUser, err := uc.userRepository.GetByUsername(user.Username)
-		if err != nil {
-			return fmt.Errorf("failed to check username existence: %v", err)
-		}
-		if existingUser != nil {
-			return fmt.Errorf("username already exists")
-		}
-	}
-	err := uc.userRepository.UpdateUser(user)
+func (uc *userUseCase) UpdateUser(userRequest *model.UserRequest) error {
+
+	
+	userRepo, err := uc.userRepository.GetUserByID(userRequest.ID)
 	if err != nil {
-		// Handle any repository errors or perform error logging
+		return err
+	}
+	if userRepo == nil {
+		return utils.ErrUserNotFound
+	}
+
+	
+	user := &model.User{
+		ID:        userRequest.ID,
+		Username:  utils.NonEmpty(userRequest.Username, userRepo.Username),
+		Password:  utils.NonEmpty(userRequest.Password, userRepo.Password),
+		Role:      utils.NonEmpty(userRequest.Role, userRepo.Role),
+		IsActive:  userRepo.IsActive,
+		UpdatedBy: userRequest.UpdatedBy,
+		UpdatedAt: time.Now(),
+		CreatedAt: userRepo.CreatedAt,
+		CreatedBy: userRepo.CreatedBy,
+	}
+	err = uc.userRepository.UpdateUser(user)
+	if err != nil {	
 		return err
 	}
 

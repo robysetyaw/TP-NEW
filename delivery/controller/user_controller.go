@@ -71,42 +71,26 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 }
 
 func (uc *UserController) UpdateUser(c *gin.Context) {
-	userID := c.Param("username")
+	userID := c.Param("id")
 	username, err := utils.GetUsernameFromContext(c)
-	var user model.User
+	var user model.UserRequest
 	if err := c.ShouldBindJSON(&user); err != nil {
 		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusBadRequest, "Bad request", nil)
 		return
 	}
-	user.ID = userID
-
-	token, err := utils.ExtractTokenFromAuthHeader(c.GetHeader("Authorization"))
-	if err != nil {
-		logrus.Errorf("[%v]%v", username, err)
-		utils.SendResponse(c, http.StatusUnauthorized, "Invalid authorization header", nil)
-		return
-	}
-
-	claims, err := utils.VerifyJWTToken(token)
-	if err != nil {
-		logrus.Errorf("[%v]%v", username, err)
-		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
-		return
-	}
-	userName := claims["username"].(string)
+	
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		logrus.Errorf("[%v]%v", username, err)
 		utils.SendResponse(c, http.StatusInternalServerError, "Failed to encrypt password", nil)
 		return
 	}
-
+	user.ID = userID
 	user.Password = string(hashedPassword)
-	user.IsActive = true
-	if err := uc.userUseCase.UpdateUser(&user, userName); err != nil {
+	if err := uc.userUseCase.UpdateUser(&user); err != nil {
 		logrus.Errorf("[%v]%v", username, err)
-		utils.SendResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		utils.HandleError(c, err)
 		return
 	}
 	logrus.Infof("[%v] Updated user %v", username, user.Username)
