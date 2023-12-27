@@ -98,14 +98,10 @@ func (mc *MeatController) GetMeatByName(c *gin.Context) {
 	meat, err := mc.meatUseCase.GetMeatByName(name)
 	if err != nil {
 		logrus.Errorf("[%v]%v", username, err)
-		utils.SendResponse(c, http.StatusInternalServerError, "Failed to get meat", nil)
+		utils.HandleError(c, err)
 		return
 	}
-	if meat == nil {
-		logrus.Errorf("[%v] Meat not found", username)
-		utils.SendResponse(c, http.StatusNotFound, "Meat not found", nil)
-		return
-	}
+
 	logrus.Infof("[%v] Get meat %v", username, name)
 	utils.SendResponse(c, http.StatusOK, "Success", meat)
 }

@@ -74,6 +74,9 @@ func (mc *meatUseCase) GetAllMeats(page int, itemsPerPage int) ([]*model.MeatWit
 
 func (mc *meatUseCase) GetMeatByName(name string) (*model.Meat, error) {
 	meat, err := mc.meatRepository.GetMeatByName(name)
+	if meat == nil{
+		return nil, utils.ErrMeatNotFound
+	}
 	if err != nil {
 		log.WithField("error", err).Error("Failed to get meat by name")
 		return nil, err
