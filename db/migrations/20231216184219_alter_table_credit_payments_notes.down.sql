@@ -1,0 +1,1 @@
+ALTER TABLE credit_payments DROP COLUMN notes;
