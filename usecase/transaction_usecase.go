@@ -112,7 +112,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		}
 		if detail.Qty <= 0 {
 			return nil, utils.ErrInvalidQty
-		} 
+		}
 		detail.ID = uuid.NewString()
 		detail.MeatID = meat.ID
 		detail.MeatName = meat.Name
@@ -188,8 +188,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		return nil, err
 	}
 
-	go func() {
-		uc.creditPaymentRepo.CreateCreditPayment(&model.CreditPayment{
+		err = uc.creditPaymentRepo.CreateCreditPayment(&model.CreditPayment{
 			ID:            uuid.New().String(),
 			InvoiceNumber: transaction.InvoiceNumber,
 			Amount:        transaction.PaymentAmount,
@@ -200,7 +199,10 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 			UpdatedBy:     transaction.CreatedBy,
 			Notes:         notes,
 		})
-	}()
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 
 	transactionResponse := &model.TransactionHeaderResponse{
 		ID:                 result.ID,
