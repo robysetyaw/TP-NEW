@@ -51,7 +51,7 @@ func (r *meatRepository) GetAllMeats(page int, itemsPerPage int) ([]*model.Meat,
 
 	offset := (page - 1) * itemsPerPage
 
-	if err := r.db.Where("is_active = ?", true).Order("name DESC").
+	if err := r.db.Where("is_active = ?", true).Order("name ASC").
 		Offset(offset).Limit(itemsPerPage).
 		Order("created_at desc").Find(&meats).Error; err != nil {
 		return nil, totalPages, err
