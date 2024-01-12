@@ -74,7 +74,7 @@ func (mc *meatUseCase) GetAllMeats(page int, itemsPerPage int) ([]*model.MeatWit
 
 func (mc *meatUseCase) GetMeatByName(name string) (*model.Meat, error) {
 	meat, err := mc.meatRepository.GetMeatByName(name)
-	if meat == nil{
+	if meat == nil {
 		return nil, utils.ErrMeatNotFound
 	}
 	if err != nil {
@@ -102,7 +102,7 @@ func (mc *meatUseCase) DeleteMeat(id string) error {
 		log.WithField("error", err).Error("Failed to check meat existence")
 		return fmt.Errorf("failed to check meat name existence: %v", err)
 	}
-	if existingMeat != nil {
+	if existingMeat == nil {
 		log.WithField("meatName", id).Error("Meat name not found")
 		return utils.ErrMeatNotFound
 	}
