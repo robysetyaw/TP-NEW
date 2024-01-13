@@ -100,7 +100,7 @@ func NewServer() *Server {
 	logrus.SetLevel(logger.Level)
 
 	gin.SetMode(gin.ReleaseMode)       // Mengubah mode Gin menjadi "release" di lingkungan produksi
-	gin.DefaultWriter = ioutil.Discard // Menyembunyikan log bawaan Gin
+	// gin.DefaultWriter = ioutil.Discard // Menyembunyikan log bawaan Gin
 
 	return &Server{useCaseManager: usecase, engine: r}
 }
