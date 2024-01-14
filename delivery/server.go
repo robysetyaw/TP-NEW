@@ -1,10 +1,12 @@
 package delivery
 
 import (
-	"io/ioutil"
+	// "io"
+	// "io/ioutil"
+	// "net"
 	"os"
-	"path"
-	"time"
+	// "path"
+	// "time"
 	"trackprosto/config"
 	"trackprosto/delivery/controller"
 	"trackprosto/manager"
@@ -15,6 +17,7 @@ import (
 	// "github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 	// "gopkg.in/olivere/elastic.v5"
+	// "github.com/bshuster-repo/logrus-logstash-hook"
 )
 
 type Server struct {
@@ -60,28 +63,27 @@ func NewServer() *Server {
 
 	// Inisialisasi logger
 	logger := logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{})
-	// logger.SetOutput(os.Stdout)        // Atur output ke stdout atau file log
-	logPath := "log/"
-	if _, err := os.Stat(logPath); os.IsNotExist(err) {
-		// Buat direktori log jika belum ada
-		err := os.Mkdir(logPath, os.ModePerm)
-		if err != nil {
-			logrus.Errorf("Failed to create log directory: %v", err)
-			logger.SetOutput(ioutil.Discard) // Jangan menulis log jika gagal membuat direktori
-		}
-	}
+	logger.SetOutput(os.Stdout) // Atur output ke stdout atau file log
+	// logPath := "log/"
+	// if _, err := os.Stat(logPath); os.IsNotExist(err) {
+	// 	// Buat direktori log jika belum ada
+	// 	err := os.Mkdir(logPath, os.ModePerm)
+	// 	if err != nil {
+	// 		logrus.Errorf("Failed to create log directory: %v", err)
+	// 		logger.SetOutput(ioutil.Discard) // Jangan menulis log jika gagal membuat direktori
+	// 	}
+	// }
 
-	logFile := time.Now().Format("2006-01-02") + ".log"
-	logFullPath := path.Join(logPath, logFile)
+	// logFile := time.Now().Format("2006-01-02") + ".log"
+	// logFullPath := path.Join(logPath, logFile)
 
-	file, err := os.OpenFile(logFullPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-		logger.SetOutput(file)
-	} else {
-		logrus.Errorf("Failed to open log file: %v", err)
-		// logger.SetOutput(ioutil.Discard) // Jangan menulis log jika gagal membuka file
-	}
+	// file, err := os.OpenFile(logFullPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	// if err == nil {
+	// 	logger.SetOutput(io.MultiWriter(file, os.Stdout))
+	// } else {
+	// 	logrus.Errorf("Failed to open log file: %v", err)
+	// 	// logger.SetOutput(ioutil.Discard) // Jangan menulis log jika gagal membuka file
+	// }
 
 	// Atur level logging
 	logger.SetLevel(logrus.DebugLevel)
@@ -99,7 +101,7 @@ func NewServer() *Server {
 	logrus.SetOutput(logger.Out)
 	logrus.SetLevel(logger.Level)
 
-	gin.SetMode(gin.ReleaseMode)       // Mengubah mode Gin menjadi "release" di lingkungan produksi
+	gin.SetMode(gin.ReleaseMode) // Mengubah mode Gin menjadi "release" di lingkungan produksi
 	// gin.DefaultWriter = ioutil.Discard // Menyembunyikan log bawaan Gin
 
 	return &Server{useCaseManager: usecase, engine: r}
