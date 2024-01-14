@@ -21,7 +21,7 @@ type TransactionRepository interface {
 	GetTransactionByRangeDateWithTxType(startDate time.Time, endDate time.Time, tx_type string) ([]*model.TransactionHeader, error)
 	GetTransactionByRangeDateWithTxTypeAndPaid(startDate time.Time, endDate time.Time, tx_type, payment_status string) ([]*model.TransactionHeader, error)
 	GetTransactionsByDateAndType(startDate time.Time, endDate time.Time, txType string) ([]*model.TransactionHeader, error)
-	GetAllTransactionsByCustomerId(customer_id string) ([]*model.TransactionHeader, error)
+	GetAllTransactionsByCustomerId(customer_id string,page int, itemsPerPage int ) ([]*model.TransactionHeader, int, error)
 	getCustomerDebt(customer_id string) (float64, error)
 	getTransactionDebt(id string) (float64, error)
 	CalculateMeatStockByDate(meatID string, startDate string) (stockIn float64, stockOut float64, err error)
@@ -86,16 +86,33 @@ func NewTransactionRepository(db *gorm.DB) TransactionRepository {
 }
 
 // GetAllTransactionsByCustomerUsername implements TransactionRepository.
-func (repo *transactionRepository) GetAllTransactionsByCustomerId(customer_id string) ([]*model.TransactionHeader, error) {
+func (repo *transactionRepository) GetAllTransactionsByCustomerId(customer_id string,page int, itemsPerPage int ) ([]*model.TransactionHeader, int, error) {
 	var transactions []*model.TransactionHeader
 
-	err := repo.db.Preload("TransactionDetails").Where("customer_id = ? AND is_active = true", customer_id).
-		Order("created_at desc").Find(&transactions).Error
-	if err != nil {
-		return nil, err
+	if page < 1 {
+		page = 1
 	}
 
-	return transactions, nil
+	var totalCount int64
+	if err := repo.db.Model(&model.TransactionHeader{}).Where("is_active = true").Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	totalPages := int((totalCount + int64(itemsPerPage) - 1) / int64(itemsPerPage))
+
+	if page > totalPages {
+		page = totalPages
+	}
+
+	offset := (page - 1) * itemsPerPage
+
+
+	err := repo.db.Preload("TransactionDetails").Where("customer_id = ? AND is_active = true", customer_id).Offset(offset).Limit(itemsPerPage).Order("created_at desc").Find(&transactions).Error
+		if err != nil {
+			return nil, totalPages, err
+		}
+
+		return transactions, totalPages, nil
 }
 
 func (repo *transactionRepository) CreateTransactionHeader(header *model.TransactionHeader) (*model.TransactionHeader, error) {

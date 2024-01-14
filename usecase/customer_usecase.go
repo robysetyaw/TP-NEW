@@ -16,7 +16,7 @@ type CustomerUsecase interface {
 	GetAllCustomers(page int, itemsPerPage int) ([]*model.CustomerModel, int, error)
 	DeleteCustomer(id string) error
 	GetAllCustomerByCompanyId(page int, itemsPerPage int, company_id string) ([]*model.CustomerModel, int, error)
-	GetAllTransactionsByCustomerId(customer_id string,tx_type string) ([]*model.TransactionHeader, error)
+	GetAllTransactionsByCustomerId(customer_id string, payment_status string, page int, itemsPerPage int) ([]*model.TransactionHeader, int, error)
 }
 
 type customerUsecase struct {
@@ -36,20 +36,20 @@ func NewCustomerUsecase(cr repository.CustomerRepository, cpr repository.Company
 }
 
 // GetAllTransactionsByCustomerId implements CustomerUsecase.
-func (uc *customerUsecase) GetAllTransactionsByCustomerId(customer_id string, payment_status string) ([]*model.TransactionHeader, error) {
+func (uc *customerUsecase) GetAllTransactionsByCustomerId(customer_id string, payment_status string, page int, itemsPerPage int) ([]*model.TransactionHeader, int, error) {
 	custExist , err := uc.customerRepo.GetCustomerById(customer_id);
 	if custExist == nil {
-		return nil, utils.ErrCustomerNotFound
+		return nil,0, utils.ErrCustomerNotFound
 	}
 	if err != nil {
-		return nil, err
+		return nil,0, err
 	}
-	cust_transactions, err := uc.transactionRepo.GetAllTransactionsByCustomerId(customer_id);
+	cust_transactions, totalPages, err := uc.transactionRepo.GetAllTransactionsByCustomerId(customer_id, page, itemsPerPage);
 	if err != nil {
-		return nil, err
+		return nil,0, err
 	}
 	if cust_transactions == nil {
-		return nil, utils.ErrTransactionNotFound
+		return nil,0, utils.ErrTransactionNotFound
 	}
 
 	if payment_status != "" {
@@ -59,10 +59,10 @@ func (uc *customerUsecase) GetAllTransactionsByCustomerId(customer_id string, pa
                 filteredTransactions = append(filteredTransactions, transaction)
             }
         }
-        return filteredTransactions, nil
+        return filteredTransactions,totalPages, nil
     }
 
-	return cust_transactions, nil
+	return cust_transactions,totalPages, nil
 }
 func (uc *customerUsecase) CreateCustomer(customer *model.CustomerModel) (*model.CustomerModel, error) {
 	

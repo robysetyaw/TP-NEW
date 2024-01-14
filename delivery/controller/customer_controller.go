@@ -210,13 +210,35 @@ func (cc *CustomerController) GetAllTransactionsByCustomerId(c *gin.Context) {
 		return
 	}
 
-	customerTransactions, err := cc.customerUsecase.GetAllTransactionsByCustomerId(customerId, paymentStatus)
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page <= 0 {
+		logrus.Errorf("[%v]%v", username, err)
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid page number", nil)
+		return
+	}
+
+	itemsPerPage, err := strconv.Atoi(c.DefaultQuery("itemsPerPage", "10"))
+	if err != nil || itemsPerPage <= 0 {
+		logrus.Errorf("[%v]%v", username, err)
+		utils.SendResponse(c, http.StatusBadRequest, "Invalid itemsPerPage", nil)
+		return
+	}
+
+	customerTransactions, totalPages,err := cc.customerUsecase.GetAllTransactionsByCustomerId(customerId, paymentStatus, page, itemsPerPage)
 	if err != nil {
 		logrus.Errorf("[%v]%v", username, err)
 		utils.HandleError(c, err)
 		return
 	}
+
+	paginationData := map[string]interface{}{
+		"page":         page,
+		"itemsPerPage": itemsPerPage,
+		"totalPages":   totalPages,
+	}
+
 	logrus.Infof("[%s] get all transaction by customer id", username)
-	utils.SendResponse(c, http.StatusOK, "Success", customerTransactions)
+	logrus.Infof("[%v] Transactions found with pagination data = %v and transactions = %v", username, paginationData, customerTransactions)
+	utils.SendResponse(c, http.StatusOK, "Success", map[string]interface{}{"transactions": customerTransactions, "pagination": paginationData})
 
 }
