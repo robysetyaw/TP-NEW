@@ -10,14 +10,14 @@ RUN go env -w GO111MODULE=on
 # Download Go modules
 # COPY go.mod go.sum ./
 RUN go mod download
-
 # Copy the source code. Note the slash at the end, as explained in
 # https://docs.docker.com/engine/reference/builder/#copy
 # COPY *.go ./
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix tgo -o app .
-
+ENV TZ=Asia/Jakarta
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime
 
 
 # COPY --chown=admin:admin --from=build /build/app /usr/bin/app
