@@ -32,7 +32,7 @@ func (cc *CreditPaymentController) CreateCreditPayment(c *gin.Context) {
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-	logrus.Infof("[%s] is creating a credit payment", username)
+	logrus.Infof("[%s] is creating a credit payment [%v]", username, c.Request.Body)
 
 	var payment model.CreditPayment
 	if err := c.ShouldBindJSON(&payment); err != nil {

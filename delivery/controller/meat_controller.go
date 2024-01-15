@@ -52,7 +52,7 @@ func (mc *MeatController) CreateMeat(ctx *gin.Context) {
 		logrus.Errorf("[%v]%v", username, err)
 		return
 	}
-	logrus.Info("Meat created successfully, meatname ", meat.Name)
+	logrus.Infof("[%s] Meat created successfully, meatname [%s]", username, meat.Name)
 	utils.SendResponse(ctx, http.StatusCreated, "Success", meat)
 }
 
