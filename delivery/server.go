@@ -41,6 +41,7 @@ func (s *Server) initController() {
 	controller.NewCreditPaymentController(s.engine, s.useCaseManager.GetCreditPaymentUseCase())
 	controller.NewCustomerController(s.engine, s.useCaseManager.GetCustomerUsecase())
 	controller.NewCompanyController(s.engine, s.useCaseManager.GetCompanyUsecase())
+	controller.NewDailyExpenditureController(s.engine, s.useCaseManager.GetDailyExpenditureUseCase())
 }
 
 func NewServer() *Server {
@@ -88,14 +89,18 @@ func NewServer() *Server {
 	// Atur level logging
 	logger.SetLevel(logrus.DebugLevel)
 
-	// // Tambahkan hook untuk mengganti file log setiap hari
-	// logrus.AddHook(lfshook.NewHook(
-	// 	lfshook.PathMap{
-	// 		logrus.InfoLevel:  logFullPath,
-	// 		logrus.ErrorLevel: logFullPath,
-	// 	},
-	// 	&logrus.JSONFormatter{},
-	// ))
+	// Konfigurasi hook Elasticsearch
+	// conn, err := net.Dial("tcp", "no-company-search-3575562732.us-east-1.bonsaisearch.net:443") // Ganti dengan URL dan port Logstash Anda
+	// if err == nil {
+	//     esHook := logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{
+	// 		"app": "trackprosto",
+	// 		"env": "production",
+	// 		"ver": "1.0.0",
+	// 	}))
+	//     logger.Hooks.Add(esHook)
+	// } else {
+	//     logrus.Errorf("Failed to create Logstash hook: %v", err)
+	// }
 
 	// Set Logrus logger sebagai default logger
 	logrus.SetOutput(logger.Out)

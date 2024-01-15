@@ -13,17 +13,19 @@ type UsecaseManager interface {
 	GetCreditPaymentUseCase() usecase.CreditPaymentUseCase
 	GetCustomerUsecase() usecase.CustomerUsecase
 	GetCompanyUsecase() usecase.CompanyUseCase
+	GetDailyExpenditureUseCase() usecase.DailyExpenditureUseCase
 }
 
 type usecaseManager struct {
-	repoManager          RepoManager
-	userUsecase          usecase.UserUseCase
-	loginUsecase         usecase.LoginUseCase
-	meatUsecase          usecase.MeatUseCase
-	creditPaymentUseCase usecase.CreditPaymentUseCase
-	transactionUseCase   usecase.TransactionUseCase
-	customerUsecase      usecase.CustomerUsecase
-	companyUsecase       usecase.CompanyUseCase
+	repoManager             RepoManager
+	userUsecase             usecase.UserUseCase
+	loginUsecase            usecase.LoginUseCase
+	meatUsecase             usecase.MeatUseCase
+	creditPaymentUseCase    usecase.CreditPaymentUseCase
+	transactionUseCase      usecase.TransactionUseCase
+	customerUsecase         usecase.CustomerUsecase
+	companyUsecase          usecase.CompanyUseCase
+	dailyExpenditureUseCase usecase.DailyExpenditureUseCase
 }
 
 var onceLoadUserUsecase sync.Once
@@ -33,6 +35,14 @@ var onceLoadTxUsecase sync.Once
 var onceLoadCreditPaymentUseCase sync.Once
 var onceLoadCustomerUseCase sync.Once
 var onceLoadCompanyUsecase sync.Once
+var onceLoadDailyExpenditureUseCase sync.Once
+
+func (um *usecaseManager) GetDailyExpenditureUseCase() usecase.DailyExpenditureUseCase {
+	onceLoadDailyExpenditureUseCase.Do(func() {
+		um.dailyExpenditureUseCase = usecase.NewDailyExpenditureUseCase(um.repoManager.GetDailyExpenditureRepo(), um.repoManager.GetUserRepo())
+	})
+	return um.dailyExpenditureUseCase
+}
 
 func (um *usecaseManager) GetCompanyUsecase() usecase.CompanyUseCase {
 	onceLoadCompanyUsecase.Do(func() {
