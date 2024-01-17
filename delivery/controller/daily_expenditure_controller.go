@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type DailyExpenditureController struct {
@@ -83,6 +84,7 @@ func (dec *DailyExpenditureController) CreateDailyExpenditure(c *gin.Context) {
 
 	userID := claims["user_id"].(string)
 	userName := claims["username"].(string)
+	logrus.Infof("[%s] is creating daily expenditure", userName)
 	expenditure.UserID = userID
 	expenditure.CreatedBy = userName
 	expenditure.ID = uuid.New().String()
@@ -91,7 +93,7 @@ func (dec *DailyExpenditureController) CreateDailyExpenditure(c *gin.Context) {
 		utils.HandleError(c, err)
 		return
 	}
-
+	logrus.Infof("[%s] created daily expenditure", userName)
 	utils.SendResponse(c, http.StatusOK, "Success", nil)
 }
 
@@ -117,7 +119,7 @@ func (dec *DailyExpenditureController) UpdateDailyExpenditure(c *gin.Context) {
 		utils.SendResponse(c, http.StatusUnauthorized, "Invalid token", nil)
 		return
 	}
-
+	logrus.Infof("[%s] is updating daily expenditure", claims["username"].(string))
 	expenditure.UpdatedBy = claims["username"].(string)
 	expenditure.IsActive = true
 
@@ -125,44 +127,65 @@ func (dec *DailyExpenditureController) UpdateDailyExpenditure(c *gin.Context) {
 		utils.HandleError(c, err)
 		return
 	}
-
+	logrus.Infof("[%s] updated daily expenditure", claims["username"].(string))
 	utils.SendResponse(c, http.StatusOK, "Success", nil)
 }
 
 func (dec *DailyExpenditureController) GetDailyExpenditureByID(c *gin.Context) {
 	expenditureID := c.Param("id")
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		utils.HandleError(c, err)
+		return
+	}
+	logrus.Infof("[%s] is geting daily expenditure", username)
 
 	expenditure, err := dec.dailyExpenditureUseCase.GetDailyExpenditureByID(expenditureID)
 	if err != nil {
+		logrus.Infof("[%s] geted daily expenditure", username)
 		utils.HandleError(c, err)
 		return
 	}
 
 	if expenditure == nil {
+		logrus.Infof("[%s] geted daily expenditure", username)
 		utils.SendResponse(c, http.StatusNotFound, "Daily expenditure not found", nil)
 		return
 	}
-
+	logrus.Infof("[%s] geted daily expenditure", username)
 	utils.SendResponse(c, http.StatusOK, "Success", expenditure)
 }
 
 func (dec *DailyExpenditureController) GetAllDailyExpenditures(c *gin.Context) {
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		utils.HandleError(c, err)
+		return
+	}
+	logrus.Infof("[%s] is geting all daily expenditure", username)
 	expenditures, err := dec.dailyExpenditureUseCase.GetAllDailyExpenditures()
 	if err != nil {
 		utils.HandleError(c, err)
 		return
 	}
-
+	logrus.Infof("[%s] succes geting all daily expenditure", username)
 	utils.SendResponse(c, http.StatusOK, "Success", expenditures)
 }
 
 func (dec *DailyExpenditureController) DeleteDailyExpenditure(c *gin.Context) {
 	expenditureID := c.Param("id")
 
+	username, err := utils.GetUsernameFromContext(c)
+	if err != nil {
+		utils.HandleError(c, err)
+		return
+	}
+	logrus.Infof("[%s] is deleting daily expenditure [%s]", username, expenditureID)
+
 	if err := dec.dailyExpenditureUseCase.DeleteDailyExpenditure(expenditureID); err != nil {
 		utils.HandleError(c, err)
 		return
 	}
-
+	logrus.Infof("[%s] succes delete daily expenditure [%s]", username, expenditureID)
 	utils.SendResponse(c, http.StatusOK, "Success", nil)
 }
