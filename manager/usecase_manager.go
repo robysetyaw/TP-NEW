@@ -67,7 +67,7 @@ func (um *usecaseManager) GetUserUsecase() usecase.UserUseCase {
 
 func (um *usecaseManager) GetCreditPaymentUseCase() usecase.CreditPaymentUseCase {
 	onceLoadCreditPaymentUseCase.Do(func() {
-		um.creditPaymentUseCase = usecase.NewCreditPaymentUseCase(um.repoManager.GetCreditPaymentRepo(), um.repoManager.GetTransactionRepo())
+		um.creditPaymentUseCase = usecase.NewCreditPaymentUseCase(um.repoManager.GetCreditPaymentRepo(), um.repoManager.GetTransactionRepo(), um.repoManager.GetDailyExpenditureRepo())
 	})
 	return um.creditPaymentUseCase
 }
@@ -95,7 +95,9 @@ func (um *usecaseManager) GetTransactionUseCase() usecase.TransactionUseCase {
 			um.repoManager.GetCustomerRepo(),
 			um.repoManager.GetMeatRepo(),
 			um.repoManager.GetCompanyRepo(),
-			um.repoManager.GetCreditPaymentRepo())
+			um.repoManager.GetCreditPaymentRepo(),
+			um.repoManager.GetDailyExpenditureRepo(),
+		)
 	})
 	return um.transactionUseCase
 }

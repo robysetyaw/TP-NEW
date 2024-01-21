@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"strings"
 	"time"
 	"trackprosto/delivery/utils"
 	model "trackprosto/models"
@@ -20,11 +21,12 @@ type TransactionUseCase interface {
 }
 
 type transactionUseCase struct {
-	transactionRepo   repository.TransactionRepository
-	customerRepo      repository.CustomerRepository
-	meatRepo          repository.MeatRepository
-	companyRepo       repository.CompanyRepository
-	creditPaymentRepo repository.CreditPaymentRepository
+	transactionRepo      repository.TransactionRepository
+	customerRepo         repository.CustomerRepository
+	meatRepo             repository.MeatRepository
+	companyRepo          repository.CompanyRepository
+	creditPaymentRepo    repository.CreditPaymentRepository
+	dailyExpenditureRepo repository.DailyExpenditureRepository
 }
 
 // CreateTransaction implements TransactionUseCase.
@@ -99,6 +101,7 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 	transaction.UpdatedBy = transaction.CreatedBy
 	transaction.PaymentStatus = "paid"
 
+	var allmeat []string
 	for _, detail := range transaction.TransactionDetails {
 		meat, err := uc.meatRepo.GetMeatByID(detail.MeatID)
 		if err != nil {
@@ -145,9 +148,33 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 				return nil, err
 			}
 		}
+		allmeat = append(allmeat, meat.Name)
 	}
 	transaction.CalulatedTotal()
 	newTotal := uc.UpdateTotalTransaction(transaction)
+
+	if transaction.TxType == "in" {
+
+		// create expenditure
+		err := uc.dailyExpenditureRepo.CreateDailyExpenditure(&model.DailyExpenditure{
+			ID:          uuid.NewString(),
+			DeNote:      transaction.InvoiceNumber,
+			Amount:      transaction.PaymentAmount,
+			Description: fmt.Sprintf("Stock in %s", strings.Join(allmeat, ",")),
+			CreatedAt:   transaction.CreatedAt,
+			CreatedBy:   transaction.CreatedBy,
+			IsActive:    true,
+			Date:        transaction.Date,
+		})
+		if err != nil {
+			tx.Rollback()
+			logrus.WithFields(logrus.Fields{
+				"error": err,
+			}).Error("Failed to create daily expenditure")
+			return nil, fmt.Errorf("failed to create daily expenditure: %w", err)
+
+		}
+	}
 
 	if transaction.PaymentAmount > newTotal {
 		logrus.WithFields(logrus.Fields{
@@ -162,7 +189,6 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		notes = "Down Payment"
 		transaction.Debt = newTotal - transaction.PaymentAmount
 	}
-
 	// Create transaction header
 	result, err := uc.transactionRepo.CreateTransactionHeader(transaction)
 	if err != nil {
@@ -188,21 +214,21 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		return nil, err
 	}
 
-		err = uc.creditPaymentRepo.CreateCreditPayment(&model.CreditPayment{
-			ID:            uuid.New().String(),
-			InvoiceNumber: transaction.InvoiceNumber,
-			Amount:        transaction.PaymentAmount,
-			PaymentDate:   transaction.Date,
-			CreatedAt:     transaction.CreatedAt,
-			UpdatedAt:     transaction.CreatedAt,
-			CreatedBy:     transaction.CreatedBy,
-			UpdatedBy:     transaction.CreatedBy,
-			Notes:         notes,
-		})
-		if err != nil {
-			tx.Rollback()
-			return nil, err
-		}
+	err = uc.creditPaymentRepo.CreateCreditPayment(&model.CreditPayment{
+		ID:            uuid.New().String(),
+		InvoiceNumber: transaction.InvoiceNumber,
+		Amount:        transaction.PaymentAmount,
+		PaymentDate:   transaction.Date,
+		CreatedAt:     transaction.CreatedAt,
+		UpdatedAt:     transaction.CreatedAt,
+		CreatedBy:     transaction.CreatedBy,
+		UpdatedBy:     transaction.CreatedBy,
+		Notes:         notes,
+	})
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
 
 	transactionResponse := &model.TransactionHeaderResponse{
 		ID:                 result.ID,
@@ -292,12 +318,13 @@ func (uc *transactionUseCase) GetTransactionByInvoiceNumber(inv_number string) (
 	return transaction, nil
 }
 
-func NewTransactionUseCase(transactionRepo repository.TransactionRepository, customerRepo repository.CustomerRepository, meatRepo repository.MeatRepository, companyRepo repository.CompanyRepository, creditPaymentRepo repository.CreditPaymentRepository) TransactionUseCase {
+func NewTransactionUseCase(transactionRepo repository.TransactionRepository, customerRepo repository.CustomerRepository, meatRepo repository.MeatRepository, companyRepo repository.CompanyRepository, creditPaymentRepo repository.CreditPaymentRepository, dailyExpenditureRepo repository.DailyExpenditureRepository) TransactionUseCase {
 	return &transactionUseCase{
-		transactionRepo:   transactionRepo,
-		customerRepo:      customerRepo,
-		meatRepo:          meatRepo,
-		companyRepo:       companyRepo,
-		creditPaymentRepo: creditPaymentRepo,
+		transactionRepo:      transactionRepo,
+		customerRepo:         customerRepo,
+		meatRepo:             meatRepo,
+		companyRepo:          companyRepo,
+		creditPaymentRepo:    creditPaymentRepo,
+		dailyExpenditureRepo: dailyExpenditureRepo,
 	}
 }

@@ -18,14 +18,16 @@ type CreditPaymentUseCase interface {
 	GetCreditPaymentsByInvoiceNumber(inv_number string) ([]*model.CreditPayment, error)
 }
 type creditPaymentUseCase struct {
-	creditPaymentRepo repository.CreditPaymentRepository
-	transactionRepo   repository.TransactionRepository
+	creditPaymentRepo    repository.CreditPaymentRepository
+	transactionRepo      repository.TransactionRepository
+	dailyExpenditureRepo repository.DailyExpenditureRepository
 }
 
-func NewCreditPaymentUseCase(creditPaymentRepo repository.CreditPaymentRepository, transactionRepo repository.TransactionRepository) CreditPaymentUseCase {
+func NewCreditPaymentUseCase(creditPaymentRepo repository.CreditPaymentRepository, transactionRepo repository.TransactionRepository, dailyExpenditureRepo repository.DailyExpenditureRepository) CreditPaymentUseCase {
 	return &creditPaymentUseCase{
 		creditPaymentRepo: creditPaymentRepo,
 		transactionRepo:   transactionRepo,
+		dailyExpenditureRepo: dailyExpenditureRepo,
 	}
 }
 
@@ -96,6 +98,22 @@ func (uc *creditPaymentUseCase) CreateCreditPayment(payment *model.CreditPayment
 		tx.Rollback() // Rollback in case of error
 		return nil, utils.ErrAmountGreaterThanTotal
 	}
+
+	if transaction.TxType == "in" {
+		uc.dailyExpenditureRepo.CreateDailyExpenditure(&model.DailyExpenditure{
+			ID:         uuid.NewString(),
+			Date:       todayDate,
+			DeNote:     payment.InvoiceNumber,
+			Amount:     payment.Amount,
+			IsActive:   true,
+			CreatedAt:  createdat,
+			UpdatedAt:  createdat,
+			CreatedBy:  payment.CreatedBy,
+			UpdatedBy:  payment.CreatedBy,
+			Description: payment.Notes,
+		})
+	}
+
 	err = uc.creditPaymentRepo.CreateCreditPayment(payment)
 	if err != nil {
 		tx.Rollback() // Rollback in case of error
