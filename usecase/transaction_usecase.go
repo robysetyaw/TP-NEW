@@ -188,6 +188,9 @@ func (uc *transactionUseCase) CreateTransaction(transaction *model.TransactionHe
 		transaction.PaymentStatus = "unpaid"
 		notes = "Down Payment"
 		transaction.Debt = newTotal - transaction.PaymentAmount
+		if transaction.TxType == "in" {
+			transaction.Debt = transaction.PaymentAmount - newTotal
+		}
 	}
 	// Create transaction header
 	result, err := uc.transactionRepo.CreateTransactionHeader(transaction)
